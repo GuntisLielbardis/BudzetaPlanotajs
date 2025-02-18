@@ -47,4 +47,5 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
+!/budget_planner_backend/
 >>>>>>> 9f2cdaa (Laravel Breeze web application for budget tracking)
