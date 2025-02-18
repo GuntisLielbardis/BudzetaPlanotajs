@@ -1,0 +1,6 @@
+<<<<<<< HEAD
+# https://www.robotstxt.org/robotstxt.html
+=======
+>>>>>>> 9f2cdaa (Laravel Breeze web application for budget tracking)
+User-agent: *
+Disallow:
