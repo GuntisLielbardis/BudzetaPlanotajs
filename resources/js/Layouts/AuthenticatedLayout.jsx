@@ -30,6 +30,11 @@ export default function AuthenticatedLayout({ header, children }) {
                                 >
                                     Informācijas panelis
                                 </NavLink>
+                                <NavLink
+                                    
+                                >
+                                    Iestatījumi
+                                </NavLink>
                             </div>
                         </div>
 
