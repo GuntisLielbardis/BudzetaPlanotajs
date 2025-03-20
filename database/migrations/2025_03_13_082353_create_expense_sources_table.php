@@ -6,9 +6,12 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * Run the migrations.
+     */
     public function up(): void
     {
-        Schema::create('income_sources', function (Blueprint $table) {
+        Schema::create('expense_sources', function (Blueprint $table) {
             $table->id();
             $table->string('description');
             $table->decimal('amount', 10, 2);
@@ -22,6 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('income_sources');
+        Schema::dropIfExists('expense_sources');
     }
 };

@@ -31,7 +31,8 @@ export default function AuthenticatedLayout({ header, children }) {
                                     Informācijas panelis
                                 </NavLink>
                                 <NavLink
-                                    
+                                    href={route('settings')}
+                                    active={route().current('settings')}
                                 >
                                     Iestatījumi
                                 </NavLink>

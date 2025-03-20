@@ -8,49 +8,189 @@ import { useState, useEffect } from "react";
 import axios from 'axios';
 import { VscTrash } from "react-icons/vsc";
 import { VscAdd } from "react-icons/vsc";
+import { VscEdit } from "react-icons/vsc";
+import ConfirmDelete from "@/components/ConfirmDelete";
+import Pagination from "@/Components/Pagination";
+import { formatInTimeZone } from 'date-fns-tz'
 
 export default function Dashboard() {
+    const [incomeSource, setIncomeSource] = useState();
+    const [totalSum, getTotalSum] = useState(0);
     const [selectedCurrency, setSelectedCurrency] = useState(() => {
         return localStorage.getItem("currency") || "Valūta";
     });
+    const [description, setDescription] = useState("");
+    const [editingRowId, setEditingRowId] = useState(null);
+    const [editedIncome, setEditedIncome] = useState({});
 
     const addIncomeSource = async () => {
-        const response = await axios.post('/income-sources', {
+        await axios.post('/income-sources', {
             currency: selectedCurrency,
-            total_budget: document.getElementById('input_budget').value,
-            description: document.getElementById('input_description').value,
-            amount: document.getElementById('input_income_source').value,
+            description: description,
+            amount: incomeSource,
         });
-        console.log(response.data.message);
+        
         fetchIncomeSources();
-    };
+        setDescription(""); 
+        setIncomeSource("");
+    }; 
 
     const fetchIncomeSources = async () => {
         const response = await axios.get('/income-sources');
-        setIncomeSources(response.data);
+        setIncomeSources(response.data.incomeSources ||[]);
+        getTotalSum(response.data.sum);
     };
     
     useEffect(() => {
         localStorage.setItem("currency", selectedCurrency);
     }, [selectedCurrency]);
 
-    const [incomeSources, setIncomeSources] = useState([]);
     useEffect(() => {
-        axios.get('/income-sources').then((response) => {
-            setIncomeSources(response.data);
-        });
+        fetchIncomeSources();
+        fetchExpenseSources();
     }, []);
+    
+    const [incomeSources, setIncomeSources] = useState([]);
+    
 
+    const startEditing = (source) => {
+        setEditingRowId(source.id);
+        setEditedIncome({ 
+            description: source.description, 
+            amount: source.amount,
+            currency: source.currency
+        });
+    };
+    
+    const saveEdit = async (id) => {
+        try {
+            const originalSource = incomeSources.find(source => source.id === id);
+            const payload = {
+                description: editedIncome.description ?? originalSource.description,
+                amount: editedIncome.amount ?? originalSource.amount,
+                currency: editedIncome.currency ?? originalSource.currency
+            };
+            await axios.put(`/income-sources/${id}`, payload);
+            fetchIncomeSources();
+            setEditingRowId(null);
+        } 
+        catch (error) {
+            console.error("Neizdevās saglabāt:", error);
+        }
+    };
+      
     const deleteIncomeSource = async (id) => {
         try {
-            const response = await axios.delete(`/income-sources/${id}`);
-            console.log(response.data.message);
+            await axios.delete(`/income-sources/${id}`);
             fetchIncomeSources();
         } catch (error) {
             console.error("Neizdevās izdzēst:", error);
         }
     };
+    
+    const [expenseSource, setExpenseSource] = useState();
+    const [totalSum2, getTotalSum2] = useState(0);
+    const [description2, setDescription2] = useState("");
+    const [editingRowId2, setEditingRowId2] = useState(null);
+    const [editedExpense, setEditedExpense] = useState({});
 
+    const addExpenseSource = async () => {
+        await axios.post('/expense-sources', {
+            currency: selectedCurrency,
+            description: description2,
+            amount: expenseSource,
+        });
+        fetchExpenseSources();
+        setDescription2(""); 
+        setExpenseSource("");
+    }; 
+
+    const fetchExpenseSources = async () => {
+        const response2 = await axios.get('/expense-sources');
+        setExpenseSources(response2.data.expenseSources ||[]);
+        getTotalSum2(response2.data.sum);
+    };
+
+    const [expenseSources, setExpenseSources] = useState([]);
+    
+
+    const startEditing2 = (source) => {
+        setEditingRowId2(source.id);
+        setEditedExpense({ 
+            description: source.description, 
+            amount: source.amount,
+            currency: source.currency
+        });
+    };
+    
+    const saveEdit2 = async (id) => {
+        try {
+            const originalSource2 = expenseSources.find(source => source.id === id);
+            const payload2 = {
+                description: editedExpense.description ?? originalSource2.description,
+                amount: editedExpense.amount ?? originalSource2.amount,
+                currency: editedExpense.currency ?? originalSource2.currency
+            };
+            await axios.put(`/expense-sources/${id}`, payload2);
+            fetchExpenseSources();
+            setEditingRowId2(null);
+        } 
+        catch (error) {
+            console.error("Neizdevās saglabāt:", error);
+        }
+    };
+      
+    const deleteExpenseSource = async (id) => {
+        try {
+            await axios.delete(`/expense-sources/${id}`);
+            fetchExpenseSources();
+        } catch (error) {
+            console.error("Neizdevās izdzēst:", error);
+        }
+    };
+
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [selectedId, setSelectedId] = useState(null);
+    const [selectedType, setSelectedType] = useState("");
+
+    const openModal = (id, type) => {
+        setSelectedId(id);
+        setSelectedType(type);
+        setIsModalOpen(true);
+    };
+
+    const closeModal = () => {
+        setIsModalOpen(false);
+        setSelectedId(null);
+    };
+
+    const confirmDelete = () => {
+        if (selectedId) {
+            if (selectedType=="income")
+                deleteIncomeSource(selectedId);
+            else if (selectedType=="expense")
+                deleteExpenseSource(selectedId);
+        }
+        closeModal();
+    };
+
+    const [currentPageIncome, setCurrentPageIncome] = useState(0);
+    const [currentPageExpense, setCurrentPageExpense] = useState(0);
+    const itemsPerPage = 5;
+    const offsetIncome = currentPageIncome * itemsPerPage;
+    const offsetExpense = currentPageExpense * itemsPerPage;
+    const currentItems = incomeSources.slice(offsetIncome, offsetIncome + itemsPerPage);
+    const currentItems2 = expenseSources.slice(offsetExpense, offsetExpense + itemsPerPage);
+    const pageCount = Math.ceil(incomeSources.length / itemsPerPage);
+    const pageCount2 = Math.ceil(expenseSources.length / itemsPerPage);
+
+    const handlePageChangeIncome = ({ selected }) => {
+        setCurrentPageIncome(selected);
+    };
+    const handlePageChangeExpense = ({ selected }) => {
+        setCurrentPageExpense(selected);
+    };
+    
     return (
         <AuthenticatedLayout
             header={
@@ -69,7 +209,7 @@ export default function Dashboard() {
                                 <InputError className="mt-2" message={() => { }} />
                             </div>
 
-                            <div className="">
+                            <div>
                                 <div className="relative inline-block">
                                     <InputLabel htmlFor="currency_select" value="Valūta" />
                                     <Dropdown>
@@ -109,57 +249,266 @@ export default function Dashboard() {
                                         </Dropdown.Content>
                                     </Dropdown>
                                 </div>
-
-                                <div>
-                                    <InputLabel htmlFor="input_budget" value="Kopējais budžets" className="mt-5" />
-                                    <TextInput id="input_budget" type="number" placeholder="Jūsu budžets" className="mt-2" required />
-                                </div>
-
+                                
                                 <div className="pt-5">
                                     <h2 className="text-lg font-bold">Ienākumu avoti</h2>
                                     <div className="space-y-2">
                                         <div className="flex items-start gap-3">
-                                            <textarea id="input_description" placeholder="Raksturojums" className="h-10 w-1/4 resize-none overflow-hidden rounded-md px-3 py-2" rows="1"
+                                            <textarea id="input_description" placeholder="Raksturojums" className="h-10 w-1/4 resize-none overflow-hidden rounded-md px-3 py-2" value={description} onChange={(e) => setDescription(e.target.value)} rows="1"
                                                 onInput={(e) => {
                                                     e.target.style.height = "40px";
                                                     e.target.style.height = `${e.target.scrollHeight}px`;
                                                 }}
                                             />
 
-                                            <TextInput id="input_income_source" type="number" placeholder="Apjoms" className="h-10" required />
+                                            <TextInput id="input_income_source" type="number" placeholder="Apjoms" className="h-10" value={incomeSource} onChange={(e) => setIncomeSource(e.target.value)} required />
                                             <button onClick={addIncomeSource} className="flex items-center h-10 text-white bg-green-700 hover:bg-green-800 rounded-lg text-sm gap-1 px-4 py-2"><VscAdd className="text-lg"/>Pievienot</button>
                                         </div>
 
-                                        {incomeSources.length > 0 &&(
-                                        <table className="table-auto bg-white">
-                                            <thead>
-                                                <tr>
-                                                    <th className="border px-4 py-2">Apraksts</th>
-                                                    <th className="border px-4 py-2">Summa</th>
-                                                    <th className="border px-4 py-2">Valūta</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {incomeSources.map((source) => (
-                                                    <tr key={source.id}>
-                                                        <td className="border px-4 py-2">{source.description}</td>
-                                                        <td className="border px-4 py-2">{source.amount}</td>
-                                                        <td className="border px-4 py-2">{source.currency}</td>
-                                                        <td>
-                                                            <button 
-                                                                onClick={() => deleteIncomeSource(source.id)} 
-                                                                className="flex items-center gap-1 h-10 text-white bg-red-700 hover:bg-red-800 rounded-lg text-sm px-4 py-2">
-                                                                <VscTrash className="text-lg"/>
-                                                                Dzēst
-                                                            </button>
-                                                        </td>
+                                        {incomeSources?.length > 0 &&(
+                                        <div>
+                                            <table className="table-auto bg-white">
+                                                <thead>
+                                                    <tr>
+                                                        <th className="border px-4 py-2">Apraksts</th>
+                                                        <th className="border px-4 py-2">Summa</th>
+                                                        <th className="border px-4 py-2">Valūta</th>
+                                                        <th className="border px-4 py-2">Datums</th>
                                                     </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
+                                                </thead>
+                                                <tbody>
+                                                    {currentItems.map((source) => (
+                                                        <tr key={source.id}>
+                                                            <td className="border px-4 py-2">
+                                                                {editingRowId === source.id ? (
+                                                                    <input
+                                                                        type="text"
+                                                                        value={editedIncome.description ?? ""}
+                                                                        onChange={(e) => setEditedIncome((prev) => ({ ...prev, description: e.target.value }))}
+                                                                        className="border rounded px-2 py-1 w-full"
+                                                                    />
+                                                                ) : (
+                                                                    source.description
+                                                                )}
+                                                            </td>
+
+                                                            <td className="border px-4 py-2">
+                                                                {editingRowId === source.id ? (
+                                                                    <input
+                                                                        type="number"
+                                                                        value={editedIncome.amount ?? ""}
+                                                                        onChange={(e) => setEditedIncome((prev) => ({ ...prev, amount: e.target.value }))}
+                                                                        className="border rounded px-2 py-1 w-full"
+                                                                    />
+                                                                ) : (
+                                                                    source.amount.toFixed(2)
+                                                                )}
+                                                            </td>
+
+                                                            <td className="border px-4 py-2">
+                                                                {editingRowId === source.id ? (
+                                                                    <select
+                                                                        value={editedIncome.currency !== undefined ? editedIncome.currency : source.currency}
+                                                                        onChange={(e) =>
+                                                                            setEditedIncome((prev) => ({ ...prev, currency: e.target.value }))
+                                                                        }
+                                                                        className="border rounded px-2 py-1 w-full"
+                                                                    >
+                                                                        <option value="Eiro €">Eiro €</option>
+                                                                        <option value="Dolāri $">Dolāri $</option>
+                                                                        <option value="Mārciņas £">Mārciņas £</option>
+                                                                    </select>
+                                                                ) : (
+                                                                    source.currency
+                                                                )}
+                                                            </td>
+
+                                                            <td className="border px-4 py-2">
+                                                                {formatInTimeZone(new Date(source.updated_at), 'Europe/Riga', 'yyyy-MM-dd HH:mm:ss')}
+                                                            </td>
+
+                                                            <td className="border px-4 py-2">
+                                                                {editingRowId === source.id ? (
+                                                                    <>
+                                                                        <button
+                                                                            onClick={() => saveEdit(source.id)}
+                                                                            className="text-white bg-green-600 hover:bg-green-700 px-3 py-1 rounded"
+                                                                        >
+                                                                            Saglabāt
+                                                                        </button>
+                                                                        <button
+                                                                            onClick={() => setEditingRowId(null)}
+                                                                            className="ml-2 text-white bg-gray-500 hover:bg-gray-600 px-3 py-1 rounded"
+                                                                        >
+                                                                            Atcelt
+                                                                        </button>
+                                                                    </>
+                                                                ) : (
+                                                                    <div className="flex gap-2">
+                                                                        <button
+                                                                            onClick={() => startEditing(source)}
+                                                                            className="flex items-center gap-1 text-white bg-blue-700 hover:bg-blue-800 rounded-lg text-sm px-4 py-2"
+                                                                        >
+                                                                            <VscEdit className="text-lg" /> Rediģēt
+                                                                        </button>
+
+                                                                        <button
+                                                                            onClick={() => openModal(source.id, "income")}
+                                                                            className="flex items-center gap-1 text-white bg-red-700 hover:bg-red-800 rounded-lg text-sm px-4 py-2"
+                                                                        >
+                                                                            <VscTrash className="text-lg" /> Dzēst
+                                                                        </button>
+
+                                                                        <ConfirmDelete
+                                                                            isOpen={isModalOpen}
+                                                                            onClose={closeModal}
+                                                                            onConfirm={confirmDelete}
+                                                                            message="Vai tiešām vēlaties izdzēst?"
+                                                                        />
+                                                                    </div>
+                                                                )}
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                            <p className="font-bold mt-2">Kopā: {totalSum.toFixed(2)}</p>
+                                            <Pagination pageCount={pageCount} onPageChange={handlePageChangeIncome} />
+                                        </div>
                                         )}
                                     </div>
                                 </div>
+                                
+
+
+                                <div className="pt-5">
+                                    <h2 className="text-lg font-bold">Izdevumu avoti</h2>
+                                    <div className="space-y-2">
+                                        <div className="flex items-start gap-3">
+                                            <textarea id="input_description2" placeholder="Raksturojums" className="h-10 w-1/4 resize-none overflow-hidden rounded-md px-3 py-2" value={description2} onChange={(e) => setDescription2(e.target.value)} rows="1"
+                                                onInput={(e) => {
+                                                    e.target.style.height = "40px";
+                                                    e.target.style.height = `${e.target.scrollHeight}px`;
+                                                }}
+                                            />
+
+                                            <TextInput id="input_expense_source" type="number" placeholder="Apjoms" className="h-10" value={expenseSource} onChange={(e) => setExpenseSource(e.target.value)} required />
+                                            <button onClick={addExpenseSource} className="flex items-center h-10 text-white bg-green-700 hover:bg-green-800 rounded-lg text-sm gap-1 px-4 py-2"><VscAdd className="text-lg"/>Pievienot</button>
+                                        </div>
+
+                                        {expenseSources?.length > 0 &&(
+                                        <div>
+                                            <table className="table-auto bg-white">
+                                                <thead>
+                                                    <tr>
+                                                        <th className="border px-4 py-2">Apraksts</th>
+                                                        <th className="border px-4 py-2">Summa</th>
+                                                        <th className="border px-4 py-2">Valūta</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {currentItems2.map((source) => (
+                                                        <tr key={source.id}>
+                                                            <td className="border px-4 py-2">
+                                                                {editingRowId2 === source.id ? (
+                                                                    <input
+                                                                        type="text"
+                                                                        value={editedExpense.description ?? ""}
+                                                                        onChange={(e) => setEditedExpense((prev) => ({ ...prev, description: e.target.value }))}
+                                                                        className="border rounded px-2 py-1 w-full"
+                                                                    />
+                                                                ) : (
+                                                                    source.description
+                                                                )}
+                                                            </td>
+
+                                                            <td className="border px-4 py-2">
+                                                                {editingRowId2 === source.id ? (
+                                                                    <input
+                                                                        type="number"
+                                                                        value={editedExpense.amount ?? ""}
+                                                                        onChange={(e) => setEditedExpense((prev) => ({ ...prev, amount: e.target.value }))}
+                                                                        className="border rounded px-2 py-1 w-full"
+                                                                    />
+                                                                ) : (
+                                                                    source.amount.toFixed(2)
+                                                                )}
+                                                            </td>
+
+                                                            <td className="border px-4 py-2">
+                                                                {editingRowId2 === source.id ? (
+                                                                    <select
+                                                                        value={editedExpense.currency !== undefined ? editedExpense.currency : source.currency}
+                                                                        onChange={(e) =>
+                                                                            setEditedExpense((prev) => ({ ...prev, currency: e.target.value }))
+                                                                        }
+                                                                        className="border rounded px-2 py-1 w-full"
+                                                                    >
+                                                                        <option value="Eiro €">Eiro €</option>
+                                                                        <option value="Dolāri $">Dolāri $</option>
+                                                                        <option value="Mārciņas £">Mārciņas £</option>
+                                                                    </select>
+                                                                ) : (
+                                                                    source.currency
+                                                                )}
+                                                            </td>
+
+                                                            <td className="border px-4 py-2">
+                                                                {editingRowId2 === source.id ? (
+                                                                    <>
+                                                                        <button
+                                                                            onClick={() => saveEdit2(source.id)}
+                                                                            className="text-white bg-green-600 hover:bg-green-700 px-3 py-1 rounded"
+                                                                        >
+                                                                            Saglabāt
+                                                                        </button>
+                                                                        <button
+                                                                            onClick={() => setEditingRowId2(null)}
+                                                                            className="ml-2 text-white bg-gray-500 hover:bg-gray-600 px-3 py-1 rounded"
+                                                                        >
+                                                                            Atcelt
+                                                                        </button>
+                                                                    </>
+                                                                ) : (
+                                                                    <div className="flex gap-2">
+                                                                        <button
+                                                                            onClick={() => startEditing2(source)}
+                                                                            className="flex items-center gap-1 text-white bg-blue-700 hover:bg-blue-800 rounded-lg text-sm px-4 py-2"
+                                                                        >
+                                                                            <VscEdit className="text-lg" /> Rediģēt
+                                                                        </button>
+
+                                                                        <button
+                                                                            onClick={() => openModal(source.id, "expense")}
+                                                                            className="flex items-center gap-1 text-white bg-red-700 hover:bg-red-800 rounded-lg text-sm px-4 py-2"
+                                                                        >
+                                                                            <VscTrash className="text-lg" /> Dzēst
+                                                                        </button>
+
+                                                                        <ConfirmDelete
+                                                                            isOpen={isModalOpen}
+                                                                            onClose={closeModal}
+                                                                            onConfirm={confirmDelete}
+                                                                            message="Vai tiešām vēlaties izdzēst?"
+                                                                        />
+                                                                    </div>
+                                                                )}
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                            <p className="font-bold mt-2">Kopā: {totalSum2.toFixed(2)}</p>
+                                            <Pagination pageCount={pageCount2} onPageChange={handlePageChangeExpense} />
+                                        </div>
+                                        )}
+                                    </div>
+                                </div>
+                                
+                                <div className="mt-5">
+                                    <b>Balanss: {(totalSum-totalSum2).toFixed(2)}</b>
+                                </div>
+
                             </div>
                         </div>
                     </div>

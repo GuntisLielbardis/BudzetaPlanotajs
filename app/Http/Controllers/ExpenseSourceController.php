@@ -1,9 +1,9 @@
 <?php
 namespace App\Http\Controllers;
-use App\Models\IncomeSource;
+use App\Models\ExpenseSource;
 use Illuminate\Http\Request;
 
-class IncomeSourceController extends Controller
+class ExpenseSourceController extends Controller
 {
     public function store(Request $request)
     {
@@ -12,27 +12,27 @@ class IncomeSourceController extends Controller
             'amount' => 'required|numeric',
             'currency' => 'required|string'
         ]);
-        IncomeSource::create($validatedData);
-        return response()->json(['message' => 'Income source saved successfully']);
+        ExpenseSource::create($validatedData);
+        return response()->json(['message' => 'Expense source saved successfully']);
     } 
 
     public function index()
     {
-        $incomeSources = IncomeSource::all();
-        $sum = $incomeSources->sum("amount");
-        return response()->json(["incomeSources" => $incomeSources, "sum" => $sum]);
+        $expenseSources = ExpenseSource::all();
+        $sum = $expenseSources->sum("amount");
+        return response()->json(["expenseSources" => $expenseSources, "sum" => $sum]);
     }
 
     public function update(Request $request, $id)
     {
-        $incomeSource = IncomeSource::findOrFail($id);
+        $expenseSource = ExpenseSource::findOrFail($id);
         $request->validate([
             'description' => 'required|string',
             'amount' => 'required|numeric',
             'currency' => 'required|string',
         ]);
 
-        $incomeSource->update([
+        $expenseSource->update([
             'description' => $request->description,
             'amount' => $request->amount,
             'currency' => $request->currency,
@@ -40,15 +40,15 @@ class IncomeSourceController extends Controller
         return response()->json(['message' => 'Ienākumu avots atjaunināts!']);
     }
 
-    public function destroy(IncomeSource $incomeSource)
+    public function destroy(ExpenseSource $expenseSource)
     {
-        if ($incomeSource) {
-            $incomeSource->delete();
-            return response()->json(['message' => 'Income source deleted successfully.']);
+        if ($expenseSource) {
+            $expenseSource->delete();
+            return response()->json(['message' => 'Expense source deleted successfully.']);
         } 
         else 
         {
-            return response()->json(['message' => 'Income source not found.'], 404);
+            return response()->json(['message' => 'Expense source not found.'], 404);
         }
     }
 }
