@@ -13,7 +13,7 @@ class IncomeSourceController extends Controller
             'currency' => 'required|string'
         ]);
         IncomeSource::create($validatedData);
-        return response()->json(['message' => 'Income source saved successfully']);
+        return response()->json(['message' => 'Ienākumu avots saglabāts veiksmīgi']);
     } 
 
     public function index()
@@ -44,11 +44,11 @@ class IncomeSourceController extends Controller
     {
         if ($incomeSource) {
             $incomeSource->delete();
-            return response()->json(['message' => 'Income source deleted successfully.']);
+            return response()->json(['message' => 'Ienākumu avots veiksmīgi dzēsts.']);
         } 
         else 
         {
-            return response()->json(['message' => 'Income source not found.'], 404);
+            return response()->json(['message' => 'Ienākumu avots netika atrasts.'], 404);
         }
     }
 }

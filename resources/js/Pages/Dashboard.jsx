@@ -11,7 +11,7 @@ import { VscAdd } from "react-icons/vsc";
 import { VscEdit } from "react-icons/vsc";
 import ConfirmDelete from "@/components/ConfirmDelete";
 import Pagination from "@/Components/Pagination";
-import { formatInTimeZone } from 'date-fns-tz'
+import { formatInTimeZone } from 'date-fns-tz';
 
 export default function Dashboard() {
     const [incomeSource, setIncomeSource] = useState();
@@ -194,16 +194,17 @@ export default function Dashboard() {
     return (
         <AuthenticatedLayout
             header={
-                <h2 className="text-xl font-semibold leading-tight text-gray-800">
+                <h2 className="text-xl font-semibold leading-tight dark:text-gray-200">
                     Informācijas panelis
                 </h2>
             }
+            headerClassName="dark:bg-gray-800"
         >
             <Head title="Dashboard" />
 
-            <div className="py-12">
+            <div className="min-h-screen bg-gray-200 dark:bg-gray-800 p-6 rounded-md shadow">
                 <div className="mx-auto max-w-7xl sm:px-6 lg:px-4">
-                    <div className="bg-white shadow-sm sm:rounded-lg">
+                    <div className="bg-white dark:bg-gray-700 shadow-sm sm:rounded-lg">
                         <div className="p-6 text-gray-900">
                             <div>
                                 <InputError className="mt-2" message={() => { }} />
@@ -211,13 +212,13 @@ export default function Dashboard() {
 
                             <div>
                                 <div className="relative inline-block">
-                                    <InputLabel htmlFor="currency_select" value="Valūta" />
+                                    <InputLabel htmlFor="currency_select" value="Valūta" className="text-gray-900 dark:text-gray-200" />
                                     <Dropdown>
                                         <Dropdown.Trigger>
                                             <span className="inline-flex rounded-md">
                                                 <button
                                                     type="button"
-                                                    className="inline-flex items-center rounded-md mt-2 border border-transparent bg-white px-3 py-2 text-sm font-medium leading-4 text-gray-500 transition duration-150 ease-in-out hover:text-gray-700 focus:outline-none"
+                                                    className="inline-flex items-center rounded-md mt-2 border border-transparent bg-white dark:bg-gray-700 dark:text-gray-300 px-3 py-2 text-sm font-medium leading-4 text-gray-500 transition duration-150 ease-in-out hover:text-gray-700 focus:outline-none"
                                                 >
                                                     {selectedCurrency}
                                                     <svg
@@ -236,14 +237,14 @@ export default function Dashboard() {
                                             </span>
                                         </Dropdown.Trigger>
 
-                                        <Dropdown.Content className="absolute left-0 mt-4 w-36 bg-white border border-gray-30 shadow-lg rounded-md z-50">
-                                            <Dropdown.Link as="button" onClick={() => setSelectedCurrency("Eiro €")}>
+                                        <Dropdown.Content className="absolute left-0 mt-4 w-36 bg-white dark:bg-gray-900 dark:text-gray-400 rounded-md z-50">
+                                            <Dropdown.Link as="button" onClick={() => setSelectedCurrency("Eiro €")} className="block w-full px-4 py-2 bg-white dark:bg-gray-600 text-left text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">
                                                 Eiro €
                                             </Dropdown.Link>
-                                            <Dropdown.Link as="button" onClick={() => setSelectedCurrency("Dolāri $")}>
+                                            <Dropdown.Link as="button" onClick={() => setSelectedCurrency("Dolāri $")} className="block w-full px-4 py-2 bg-white dark:bg-gray-600 text-left text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">
                                                 Dolāri $
                                             </Dropdown.Link>
-                                            <Dropdown.Link as="button" onClick={() => setSelectedCurrency("Mārciņas £")}>
+                                            <Dropdown.Link as="button" onClick={() => setSelectedCurrency("Mārciņas £")} className="block w-full px-4 py-2 bg-white dark:bg-gray-600 text-left text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">
                                                 Mārciņas £
                                             </Dropdown.Link>
                                         </Dropdown.Content>
@@ -251,25 +252,25 @@ export default function Dashboard() {
                                 </div>
                                 
                                 <div className="pt-5">
-                                    <h2 className="text-lg font-bold">Ienākumu avoti</h2>
+                                    <h2 className="text-lg font-bold text-gray-900 dark:text-gray-200">Ienākumu avoti</h2>
                                     <div className="space-y-2">
                                         <div className="flex items-start gap-3">
-                                            <textarea id="input_description" placeholder="Raksturojums" className="h-10 w-1/4 resize-none overflow-hidden rounded-md px-3 py-2" value={description} onChange={(e) => setDescription(e.target.value)} rows="1"
+                                            <textarea id="input_description" placeholder="Raksturojums" className="h-10 w-1/4 resize-none overflow-hidden rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200" value={description} onChange={(e) => setDescription(e.target.value)} rows="1"
                                                 onInput={(e) => {
                                                     e.target.style.height = "40px";
                                                     e.target.style.height = `${e.target.scrollHeight}px`;
                                                 }}
                                             />
 
-                                            <TextInput id="input_income_source" type="number" placeholder="Apjoms" className="h-10" value={incomeSource} onChange={(e) => setIncomeSource(e.target.value)} required />
+                                            <TextInput id="input_income_source" type="number" placeholder="Apjoms" className="h-10 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200" value={incomeSource} onChange={(e) => setIncomeSource(e.target.value)} required />
                                             <button onClick={addIncomeSource} className="flex items-center h-10 text-white bg-green-700 hover:bg-green-800 rounded-lg text-sm gap-1 px-4 py-2"><VscAdd className="text-lg"/>Pievienot</button>
                                         </div>
 
                                         {incomeSources?.length > 0 &&(
                                         <div>
-                                            <table className="table-auto bg-white">
+                                            <table className="table-auto bg-white dark:bg-gray-800 dark:text-gray-400">
                                                 <thead>
-                                                    <tr>
+                                                    <tr className="dark:text-gray-300">
                                                         <th className="border px-4 py-2">Apraksts</th>
                                                         <th className="border px-4 py-2">Summa</th>
                                                         <th className="border px-4 py-2">Valūta</th>
@@ -278,14 +279,14 @@ export default function Dashboard() {
                                                 </thead>
                                                 <tbody>
                                                     {currentItems.map((source) => (
-                                                        <tr key={source.id}>
+                                                        <tr key={source.id} className="bg-white dark:bg-gray-600">
                                                             <td className="border px-4 py-2">
                                                                 {editingRowId === source.id ? (
                                                                     <input
                                                                         type="text"
                                                                         value={editedIncome.description ?? ""}
                                                                         onChange={(e) => setEditedIncome((prev) => ({ ...prev, description: e.target.value }))}
-                                                                        className="border rounded px-2 py-1 w-full"
+                                                                        className="border rounded px-2 py-1 bg-white dark:bg-gray-700 w-full"
                                                                     />
                                                                 ) : (
                                                                     source.description
@@ -298,7 +299,7 @@ export default function Dashboard() {
                                                                         type="number"
                                                                         value={editedIncome.amount ?? ""}
                                                                         onChange={(e) => setEditedIncome((prev) => ({ ...prev, amount: e.target.value }))}
-                                                                        className="border rounded px-2 py-1 w-full"
+                                                                        className="border rounded px-2 py-1 bg-white dark:bg-gray-700 w-full"
                                                                     />
                                                                 ) : (
                                                                     source.amount.toFixed(2)
@@ -312,7 +313,7 @@ export default function Dashboard() {
                                                                         onChange={(e) =>
                                                                             setEditedIncome((prev) => ({ ...prev, currency: e.target.value }))
                                                                         }
-                                                                        className="border rounded px-2 py-1 w-full"
+                                                                        className="border rounded px-2 py-1 bg-white dark:bg-gray-700 w-full"
                                                                     >
                                                                         <option value="Eiro €">Eiro €</option>
                                                                         <option value="Dolāri $">Dolāri $</option>
@@ -372,7 +373,7 @@ export default function Dashboard() {
                                                     ))}
                                                 </tbody>
                                             </table>
-                                            <p className="font-bold mt-2">Kopā: {totalSum.toFixed(2)}</p>
+                                            <p className="font-bold text-gray-900 dark:text-gray-200 mt-2">Kopā: {totalSum.toFixed(2)}</p>
                                             <Pagination pageCount={pageCount} onPageChange={handlePageChangeIncome} />
                                         </div>
                                         )}
@@ -382,40 +383,41 @@ export default function Dashboard() {
 
 
                                 <div className="pt-5">
-                                    <h2 className="text-lg font-bold">Izdevumu avoti</h2>
+                                    <h2 className="text-lg font-bold text-gray-900 dark:text-gray-200">Izdevumu avoti</h2>
                                     <div className="space-y-2">
                                         <div className="flex items-start gap-3">
-                                            <textarea id="input_description2" placeholder="Raksturojums" className="h-10 w-1/4 resize-none overflow-hidden rounded-md px-3 py-2" value={description2} onChange={(e) => setDescription2(e.target.value)} rows="1"
+                                            <textarea id="input_description2" placeholder="Raksturojums" className="h-10 w-1/4 resize-none overflow-hidden rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200" value={description2} onChange={(e) => setDescription2(e.target.value)} rows="1"
                                                 onInput={(e) => {
                                                     e.target.style.height = "40px";
                                                     e.target.style.height = `${e.target.scrollHeight}px`;
                                                 }}
                                             />
 
-                                            <TextInput id="input_expense_source" type="number" placeholder="Apjoms" className="h-10" value={expenseSource} onChange={(e) => setExpenseSource(e.target.value)} required />
+                                            <TextInput id="input_expense_source" type="number" placeholder="Apjoms" className="h-10 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200" value={expenseSource} onChange={(e) => setExpenseSource(e.target.value)} required />
                                             <button onClick={addExpenseSource} className="flex items-center h-10 text-white bg-green-700 hover:bg-green-800 rounded-lg text-sm gap-1 px-4 py-2"><VscAdd className="text-lg"/>Pievienot</button>
                                         </div>
 
                                         {expenseSources?.length > 0 &&(
                                         <div>
-                                            <table className="table-auto bg-white">
+                                            <table className="table-auto bg-white dark:bg-gray-800 dark:text-gray-400">
                                                 <thead>
-                                                    <tr>
+                                                    <tr className="dark:text-gray-300">
                                                         <th className="border px-4 py-2">Apraksts</th>
                                                         <th className="border px-4 py-2">Summa</th>
                                                         <th className="border px-4 py-2">Valūta</th>
+                                                        <th className="border px-4 py-2">Datums</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
                                                     {currentItems2.map((source) => (
-                                                        <tr key={source.id}>
+                                                        <tr key={source.id} className="bg-white dark:bg-gray-600">
                                                             <td className="border px-4 py-2">
                                                                 {editingRowId2 === source.id ? (
                                                                     <input
                                                                         type="text"
                                                                         value={editedExpense.description ?? ""}
                                                                         onChange={(e) => setEditedExpense((prev) => ({ ...prev, description: e.target.value }))}
-                                                                        className="border rounded px-2 py-1 w-full"
+                                                                        className="border rounded px-2 py-1 bg-white dark:bg-gray-700 w-full"
                                                                     />
                                                                 ) : (
                                                                     source.description
@@ -428,7 +430,7 @@ export default function Dashboard() {
                                                                         type="number"
                                                                         value={editedExpense.amount ?? ""}
                                                                         onChange={(e) => setEditedExpense((prev) => ({ ...prev, amount: e.target.value }))}
-                                                                        className="border rounded px-2 py-1 w-full"
+                                                                        className="border rounded px-2 py-1 bg-white dark:bg-gray-700 w-full"
                                                                     />
                                                                 ) : (
                                                                     source.amount.toFixed(2)
@@ -442,7 +444,7 @@ export default function Dashboard() {
                                                                         onChange={(e) =>
                                                                             setEditedExpense((prev) => ({ ...prev, currency: e.target.value }))
                                                                         }
-                                                                        className="border rounded px-2 py-1 w-full"
+                                                                        className="border rounded px-2 py-1 bg-white dark:bg-gray-700 w-full"
                                                                     >
                                                                         <option value="Eiro €">Eiro €</option>
                                                                         <option value="Dolāri $">Dolāri $</option>
@@ -451,6 +453,10 @@ export default function Dashboard() {
                                                                 ) : (
                                                                     source.currency
                                                                 )}
+                                                            </td>
+
+                                                            <td className="border px-4 py-2">
+                                                                {formatInTimeZone(new Date(source.updated_at), 'Europe/Riga', 'yyyy-MM-dd HH:mm:ss')}
                                                             </td>
 
                                                             <td className="border px-4 py-2">
@@ -498,7 +504,7 @@ export default function Dashboard() {
                                                     ))}
                                                 </tbody>
                                             </table>
-                                            <p className="font-bold mt-2">Kopā: {totalSum2.toFixed(2)}</p>
+                                            <p className="font-bold text-gray-900 dark:text-gray-200 mt-2">Kopā: {totalSum2.toFixed(2)}</p>
                                             <Pagination pageCount={pageCount2} onPageChange={handlePageChangeExpense} />
                                         </div>
                                         )}
@@ -506,7 +512,7 @@ export default function Dashboard() {
                                 </div>
                                 
                                 <div className="mt-5">
-                                    <b>Balanss: {(totalSum-totalSum2).toFixed(2)}</b>
+                                    <b className="text-gray-900 dark:text-gray-200">Balanss: {(totalSum-totalSum2).toFixed(2)}</b>
                                 </div>
 
                             </div>
