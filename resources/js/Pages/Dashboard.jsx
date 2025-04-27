@@ -12,7 +12,10 @@ import { VscEdit } from "react-icons/vsc";
 import ConfirmDelete from "@/components/ConfirmDelete";
 import Pagination from "@/Components/Pagination";
 import { formatInTimeZone } from 'date-fns-tz';
-
+import { Bar } from 'react-chartjs-2';
+import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js';
+ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
+  
 export default function Dashboard() {
     const [incomeSource, setIncomeSource] = useState();
     const [totalSum, getTotalSum] = useState(0);
@@ -22,8 +25,15 @@ export default function Dashboard() {
     const [description, setDescription] = useState("");
     const [editingRowId, setEditingRowId] = useState(null);
     const [editedIncome, setEditedIncome] = useState({});
+    const [errorMessage, setErrorMessage] = useState("");
 
     const addIncomeSource = async () => {
+        if (!description.trim() || !incomeSource) {
+            setErrorMessage("Lūdzu aizpildiet abus laukus!");
+            return;
+        }
+    
+        setErrorMessage("");
         await axios.post('/income-sources', {
             currency: selectedCurrency,
             description: description,
@@ -113,7 +123,6 @@ export default function Dashboard() {
 
     const [expenseSources, setExpenseSources] = useState([]);
     
-
     const startEditing2 = (source) => {
         setEditingRowId2(source.id);
         setEditedExpense({ 
@@ -173,15 +182,28 @@ export default function Dashboard() {
         }
         closeModal();
     };
-
+    const [monthFilter, setMonthFilter] = useState('');
     const [currentPageIncome, setCurrentPageIncome] = useState(0);
     const [currentPageExpense, setCurrentPageExpense] = useState(0);
     const itemsPerPage = 5;
-    const offsetIncome = currentPageIncome * itemsPerPage;
+    const handleMonthChange = (event) => {
+        setMonthFilter(event.target.value);
+        setCurrentPageIncome(0);
+    };
+    const filteredIncomeSources = monthFilter
+    ? incomeSources?.filter(source => {
+        const month = new Date(source.updated_at).getMonth() + 1;
+        const formattedMonth = month < 10 ? `0${month}` : `${month}`;
+        return formattedMonth === monthFilter;
+    })
+    : incomeSources;
+
+    const indexOfLastIncome = (currentPageIncome + 1) * itemsPerPage;
+    const indexOfFirstIncome = indexOfLastIncome - itemsPerPage;
+    const currentItems = filteredIncomeSources?.slice(indexOfFirstIncome, indexOfLastIncome);
+    const pageCount = Math.ceil(filteredIncomeSources?.length / itemsPerPage);
     const offsetExpense = currentPageExpense * itemsPerPage;
-    const currentItems = incomeSources.slice(offsetIncome, offsetIncome + itemsPerPage);
     const currentItems2 = expenseSources.slice(offsetExpense, offsetExpense + itemsPerPage);
-    const pageCount = Math.ceil(incomeSources.length / itemsPerPage);
     const pageCount2 = Math.ceil(expenseSources.length / itemsPerPage);
 
     const handlePageChangeIncome = ({ selected }) => {
@@ -190,6 +212,33 @@ export default function Dashboard() {
     const handlePageChangeExpense = ({ selected }) => {
         setCurrentPageExpense(selected);
     };
+
+    const chartData = {
+        labels: currentItems.map(item => item.description),  // X axis: description
+        datasets: [
+          {
+            label: 'Summa',
+            data: currentItems.map(item => item.amount),       // Y axis: amount
+            backgroundColor: 'rgba(54, 162, 235, 0.6)',         // Light blue bars
+            borderColor: 'rgba(54, 162, 235, 1)',
+            borderWidth: 1,
+          },
+        ],
+      };
+      
+    const chartOptions = {
+        responsive: true,
+        indexAxis: 'y',
+        plugins: {
+          legend: {
+            position: 'top',
+          },
+          title: {
+            display: true,
+            text: 'Ienākumu avoti',
+          },
+        },
+      };
     
     return (
         <AuthenticatedLayout
@@ -253,6 +302,24 @@ export default function Dashboard() {
                                 
                                 <div className="pt-5">
                                     <h2 className="text-lg font-bold text-gray-900 dark:text-gray-200">Ienākumu avoti</h2>
+                                    <div className="mb-4">
+                                        <label htmlFor="FilterMonth" className="mr-2">Filtrēt pēc mēneša:</label>
+                                        <select id="FilterMonth" onChange={handleMonthChange} className="rounded-md px-3 py-2">
+                                            <option value="">Visi mēneši</option>
+                                            <option value="01">Janvāris</option>
+                                            <option value="02">Februāris</option>
+                                            <option value="03">Marts</option>
+                                            <option value="04">Aprīlis</option>
+                                            <option value="05">Maijs</option>
+                                            <option value="06">Jūnijs</option>
+                                            <option value="07">Jūlijs</option>
+                                            <option value="08">Augusts</option>
+                                            <option value="09">Septembris</option>
+                                            <option value="10">Oktobris</option>
+                                            <option value="11">Novembris</option>
+                                            <option value="12">Decembris</option>
+                                        </select>
+                                    </div>
                                     <div className="space-y-2">
                                         <div className="flex items-start gap-3">
                                             <textarea id="input_description" placeholder="Raksturojums" className="h-10 w-1/4 resize-none overflow-hidden rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200" value={description} onChange={(e) => setDescription(e.target.value)} rows="1"
@@ -266,6 +333,8 @@ export default function Dashboard() {
                                             <button onClick={addIncomeSource} className="flex items-center h-10 text-white bg-green-700 hover:bg-green-800 rounded-lg text-sm gap-1 px-4 py-2"><VscAdd className="text-lg"/>Pievienot</button>
                                         </div>
 
+                                        {errorMessage && (<p className="text-red-500 font-semibold">{errorMessage}</p>)}
+
                                         {incomeSources?.length > 0 &&(
                                         <div>
                                             <table className="table-auto bg-white dark:bg-gray-800 dark:text-gray-400">
@@ -275,6 +344,7 @@ export default function Dashboard() {
                                                         <th className="border px-4 py-2">Summa</th>
                                                         <th className="border px-4 py-2">Valūta</th>
                                                         <th className="border px-4 py-2">Datums</th>
+                                                        <th className="border px-4 py-2">Modifikācijas</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
@@ -373,6 +443,9 @@ export default function Dashboard() {
                                                     ))}
                                                 </tbody>
                                             </table>
+                                            <div className="my-8">
+                                                <Bar data={chartData} options={chartOptions} />
+                                            </div>
                                             <p className="font-bold text-gray-900 dark:text-gray-200 mt-2">Kopā: {totalSum.toFixed(2)}</p>
                                             <Pagination pageCount={pageCount} onPageChange={handlePageChangeIncome} />
                                         </div>
@@ -406,6 +479,7 @@ export default function Dashboard() {
                                                         <th className="border px-4 py-2">Summa</th>
                                                         <th className="border px-4 py-2">Valūta</th>
                                                         <th className="border px-4 py-2">Datums</th>
+                                                        <th className="border px-4 py-2">Modifikācijas</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
@@ -513,6 +587,13 @@ export default function Dashboard() {
                                 
                                 <div className="mt-5">
                                     <b className="text-gray-900 dark:text-gray-200">Balanss: {(totalSum-totalSum2).toFixed(2)}</b>
+                                    {totalSum - totalSum2 > 0 ? (
+                                        <span className="text-green-500"> Ienākumi pārsniedz izdevumus</span>
+                                    ) : totalSum - totalSum2 < 0 ? (
+                                        <span className="text-red-500"> Izdevumi pārsniedz ienākumus</span>
+                                    ) : (
+                                        <span className="text-gray-700 dark:text-gray-400"> Ienākumi sakrīt ar izdevumiem</span>
+                                    )}
                                 </div>
 
                             </div>

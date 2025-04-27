@@ -4,7 +4,7 @@ const ConfirmDelete = ({ isOpen, onClose, onConfirm, message }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-30 flex justify-center items-center z-50">
+    <div className="fixed inset-0 bg-black bg-opacity-30 flex justify-start pl-80 items-center z-50">
       <div className="bg-white dark:bg-gray-700 rounded-lg p-6 w-96 shadow-lg">
         <h2 className="text-lg font-bold text-gray-800 dark:text-gray-200">Apstipriniet dzēšanu</h2>
         <p className="text-gray-600 dark:text-gray-400 mt-2">{message}</p>
