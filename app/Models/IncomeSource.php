@@ -9,6 +9,7 @@ class IncomeSource extends Model
     protected $fillable = [
         'description',
         'amount',
-        'currency'
+        'currency',
+        'updated_at'
     ];
 }

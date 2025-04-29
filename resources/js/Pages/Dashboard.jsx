@@ -12,6 +12,8 @@ import { VscEdit } from "react-icons/vsc";
 import ConfirmDelete from "@/components/ConfirmDelete";
 import Pagination from "@/Components/Pagination";
 import { formatInTimeZone } from 'date-fns-tz';
+import * as XLSX from 'xlsx';
+import React, { useRef } from 'react';
 import { Bar } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js';
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
@@ -57,6 +59,7 @@ export default function Dashboard() {
 
     useEffect(() => {
         fetchIncomeSources();
+        console.log('Income Sources with updated_at:', incomeSources);
         fetchExpenseSources();
     }, []);
     
@@ -213,6 +216,55 @@ export default function Dashboard() {
         setCurrentPageExpense(selected);
     };
 
+    const formatDateString = (inputDate) => {
+        const parts = inputDate.split('/');
+        const day = parts[0];
+        const month = parts[1];
+        const year = parts[2];
+        return `${year}-${month}-${day}`;
+    };
+    
+    const fileInputRef = useRef(null);
+    const handleFileUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+    
+        const reader = new FileReader();
+        reader.onload = async (evt) => {
+            const data = evt.target.result;
+            const workbook = XLSX.read(data, { type: 'binary' });
+            const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+    
+            const rawDate = worksheet['F6'] ? worksheet['F6'].v : null;
+            const description = worksheet['D12'] ? worksheet['D12'].v : null;
+            const amount = worksheet['J16'] ? worksheet['J16'].v : null;
+    
+            if (rawDate && description && amount) {
+                const formattedDate = formatDateString(rawDate);
+    
+                try {
+                    await axios.post('/income-sources', {
+                        description: description,
+                        amount: parseFloat(amount),
+                        currency: 'Eiro €',
+                        updated_at: formattedDate,
+                    });
+                    fetchIncomeSources();
+                } catch (error) {
+                    console.error('Couldnt upload:', error);
+                }
+                finally {
+                    // Reset the file input value after processing
+                    if (fileInputRef.current) {
+                      fileInputRef.current.value = '';
+                    }
+                  }
+            }
+            console.log('Raw Date:', rawDate, typeof rawDate);
+        };
+        reader.readAsBinaryString(file);
+    };
+
     const chartData = {
         labels: currentItems.map(item => item.description),  // X axis: description
         datasets: [
@@ -331,6 +383,18 @@ export default function Dashboard() {
 
                                             <TextInput id="input_income_source" type="number" placeholder="Apjoms" className="h-10 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200" value={incomeSource} onChange={(e) => setIncomeSource(e.target.value)} required />
                                             <button onClick={addIncomeSource} className="flex items-center h-10 text-white bg-green-700 hover:bg-green-800 rounded-lg text-sm gap-1 px-4 py-2"><VscAdd className="text-lg"/>Pievienot</button>
+                                            <label htmlFor="uploadFile" className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded cursor-pointer">
+                                                Nolasīt CSV atskaiti
+                                            </label>
+                                            <input
+                                                type="file"
+                                                accept=".xlsx, .xls, .csv"
+                                                onChange={handleFileUpload}
+                                                className="hidden" 
+                                                id="uploadFile"
+                                                ref={fileInputRef}
+                                            />
+                                            
                                         </div>
 
                                         {errorMessage && (<p className="text-red-500 font-semibold">{errorMessage}</p>)}
@@ -394,8 +458,13 @@ export default function Dashboard() {
                                                                 )}
                                                             </td>
 
+                                                            
                                                             <td className="border px-4 py-2">
-                                                                {formatInTimeZone(new Date(source.updated_at), 'Europe/Riga', 'yyyy-MM-dd HH:mm:ss')}
+                                                            {source.updated_at ? (
+                                                                formatInTimeZone(new Date(source.updated_at), 'Europe/Riga', 'dd/MM/yyyy')
+                                                            ) : (
+                                                                ''
+                                                            )}
                                                             </td>
 
                                                             <td className="border px-4 py-2">

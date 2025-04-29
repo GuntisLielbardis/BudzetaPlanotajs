@@ -10,7 +10,8 @@ class IncomeSourceController extends Controller
         $validatedData = $request->validate([
             'description' => 'required|string',
             'amount' => 'required|numeric',
-            'currency' => 'required|string'
+            'currency' => 'required|string',
+            'updated_at' => 'nullable|date_format:Y-m-d'
         ]);
         IncomeSource::create($validatedData);
         return response()->json(['message' => 'Ienākumu avots saglabāts veiksmīgi']);
