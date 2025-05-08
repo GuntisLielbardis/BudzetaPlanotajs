@@ -10,17 +10,23 @@ class ExpenseSourceController extends Controller
         $validatedData = $request->validate([
             'description' => 'required|string',
             'amount' => 'required|numeric',
-            'currency' => 'required|string'
+            'currency' => 'required|string',
+            'updated_at' => 'nullable|date_format:Y-m-d'
         ]);
         ExpenseSource::create($validatedData);
         return response()->json(['message' => 'Expense source saved successfully']);
     } 
 
-    public function index()
+    public function index(Request $request)
     {
-        $expenseSources = ExpenseSource::all();
-        $sum = $expenseSources->sum("amount");
-        return response()->json(["expenseSources" => $expenseSources, "sum" => $sum]);
+        $month = $request->query('month');
+        $expenseSources = ExpenseSource::query();
+        if ($month) {
+            $expenseSources->whereMonth('updated_at', $month);
+        }
+        $filteredExpenseSources = $expenseSources->get();
+        $sum = $filteredExpenseSources->sum('amount');
+        return response()->json(["expenseSources" => $filteredExpenseSources, "sum" => $sum]);
     }
 
     public function update(Request $request, $id)

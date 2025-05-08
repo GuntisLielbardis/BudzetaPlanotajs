@@ -28,6 +28,7 @@ export default function Dashboard() {
     const [editingRowId, setEditingRowId] = useState(null);
     const [editedIncome, setEditedIncome] = useState({});
     const [errorMessage, setErrorMessage] = useState("");
+    const [monthFilter, setMonthFilter] = useState('');
 
     const addIncomeSource = async () => {
         if (!description.trim() || !incomeSource) {
@@ -48,9 +49,18 @@ export default function Dashboard() {
     }; 
 
     const fetchIncomeSources = async () => {
-        const response = await axios.get('/income-sources');
-        setIncomeSources(response.data.incomeSources ||[]);
-        getTotalSum(response.data.sum);
+        const params = new URLSearchParams();
+        if (monthFilter) {
+            params.append('month', monthFilter);
+        }
+
+        try {
+            const response = await axios.get(`/income-sources?${params.toString()}`);
+            setIncomeSources(response.data.incomeSources || []);
+            getTotalSum(response.data.sum);
+        } catch (error) {
+            console.error('Failed to fetch income sources:', error);
+        }
     };
     
     useEffect(() => {
@@ -59,13 +69,14 @@ export default function Dashboard() {
 
     useEffect(() => {
         fetchIncomeSources();
-        console.log('Income Sources with updated_at:', incomeSources);
+    }, [monthFilter]);
+
+    useEffect(() => {
         fetchExpenseSources();
-    }, []);
+    }, [monthFilter]);
     
     const [incomeSources, setIncomeSources] = useState([]);
     
-
     const startEditing = (source) => {
         setEditingRowId(source.id);
         setEditedIncome({ 
@@ -119,9 +130,18 @@ export default function Dashboard() {
     }; 
 
     const fetchExpenseSources = async () => {
-        const response2 = await axios.get('/expense-sources');
-        setExpenseSources(response2.data.expenseSources ||[]);
-        getTotalSum2(response2.data.sum);
+        const params = new URLSearchParams();
+        if (monthFilter) {
+            params.append('month', monthFilter);
+        }
+
+        try {
+            const response = await axios.get(`/expense-sources?${params.toString()}`);
+            setExpenseSources(response.data.expenseSources || []);
+            getTotalSum2(response.data.sum);
+        } catch (error) {
+            console.error('Failed to fetch expense sources:', error);
+        }
     };
 
     const [expenseSources, setExpenseSources] = useState([]);
@@ -185,13 +205,14 @@ export default function Dashboard() {
         }
         closeModal();
     };
-    const [monthFilter, setMonthFilter] = useState('');
+    
     const [currentPageIncome, setCurrentPageIncome] = useState(0);
     const [currentPageExpense, setCurrentPageExpense] = useState(0);
     const itemsPerPage = 5;
     const handleMonthChange = (event) => {
         setMonthFilter(event.target.value);
         setCurrentPageIncome(0);
+        setCurrentPageExpense(0);
     };
     const filteredIncomeSources = monthFilter
     ? incomeSources?.filter(source => {
@@ -224,71 +245,220 @@ export default function Dashboard() {
         return `${year}-${month}-${day}`;
     };
     
-    const fileInputRef = useRef(null);
-    const handleFileUpload = async (e) => {
+    const incomeFileInputRef = useRef(null);
+    const expenseFileInputRef = useRef(null);
+    const handleFileUpload = async (e, dataType) => {
         const file = e.target.files[0];
         if (!file) return;
     
+        const isCSV = file.name.endsWith('.csv');
         const reader = new FileReader();
+    
         reader.onload = async (evt) => {
             const data = evt.target.result;
-            const workbook = XLSX.read(data, { type: 'binary' });
-            const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+            let rows;
     
-            const rawDate = worksheet['F6'] ? worksheet['F6'].v : null;
-            const description = worksheet['D12'] ? worksheet['D12'].v : null;
-            const amount = worksheet['J16'] ? worksheet['J16'].v : null;
+            if (isCSV) {
+                const workbook = XLSX.read(data, { type: 'string' });
+                const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+            } else {
+                const workbook = XLSX.read(data, { type: 'binary' });
+                const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+            }
+    
+            let description = null;
+            let amount = null;
+            let rawCurrency = null;
+            let rawDate = null;
+            const labelKeywords = {
+                description: 'komentārs',
+                amount: 'kopā eur',
+                currency: 'valūta',
+                date: 'beigu datums',
+            };
+    
+            const labelsToFind = {
+                income: labelKeywords,
+                expense: labelKeywords,
+            };
+            const currentLabels = labelsToFind[dataType];
+    
+            for (let r = 0; r < rows.length; r++) {
+                for (let c = 0; c < rows[r].length; c++) {
+                    const cellValue = String(rows[r][c] || '').toLowerCase().trim();
+                    if (cellValue === currentLabels.description && !description) {
+                        description = rows[r + 1]?.[c];
+                    }
+                    if (cellValue === currentLabels.amount && !amount) {
+                        amount = rows[r + 1]?.[c];
+                    }
+                    if (cellValue === currentLabels.currency && !rawCurrency) {
+                        rawCurrency = rows[r + 1]?.[c] || 'Eiro €';
+                        if (rawCurrency?.toUpperCase() === 'EUR' || rawCurrency?.toLowerCase() === 'eiro') {
+                            rawCurrency = 'Eiro €';
+                        }
+                    }
+                    if (cellValue === currentLabels.date && !rawDate) {
+                        rawDate = rows[r + 1]?.[c];
+                    }
+                }
+            }
     
             if (rawDate && description && amount) {
                 const formattedDate = formatDateString(rawDate);
+                const endpoint = dataType === 'income' ? '/income-sources' : '/expense-sources';
+                const fetchFunction = dataType === 'income' ? fetchIncomeSources : fetchExpenseSources;
     
                 try {
-                    await axios.post('/income-sources', {
-                        description: description,
+                    await axios.post(endpoint, {
+                        description,
                         amount: parseFloat(amount),
-                        currency: 'Eiro €',
+                        currency: rawCurrency,
+                        updated_at: formattedDate,
+                    });
+                    fetchFunction();
+                } catch (err) {
+                    console.error(`Upload failed for ${dataType}:`, err);
+                } finally {
+                    if (fileInputRef.current) {
+                        fileInputRef.current.value = null;
+                    }
+                }
+            } else {
+                alert(`Could not find all required data for ${dataType} in the file.`);
+            }
+        };
+    
+        if (isCSV) {
+            reader.readAsText(file);
+        } else {
+            reader.readAsBinaryString(file);
+        }
+    };
+    /* const handleFileUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+    
+        const isCSV = file.name.endsWith('.csv');
+        const reader = new FileReader();
+    
+        reader.onload = async (evt) => {
+            const data = evt.target.result;
+            let rows;
+    
+            if (isCSV) {
+                const workbook = XLSX.read(data, { type: 'string' });
+                const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+            } else {
+                const workbook = XLSX.read(data, { type: 'binary' });
+                const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+            }
+    
+            let description = null;
+            let amount = null;
+            let rawCurrency = null;
+            let rawDate = null;
+    
+            for (let r = 0; r < rows.length; r++) {
+                for (let c = 0; c < rows[r].length; c++) {
+                    const cellValue = String(rows[r][c] || '').toLowerCase().trim();
+                    if (cellValue === 'komentārs' && !description) {
+                        description = rows[r + 1]?.[c];
+                    }
+                    if (cellValue === 'kopā eur' && !amount) {
+                        amount = rows[r + 1]?.[c];
+                    }
+                    if (cellValue === 'valūta' && !rawCurrency) {
+                        rawCurrency = rows[r + 1]?.[c] || 'Eiro €';
+                        console.log("Raw"+rawCurrency);
+                        if (rawCurrency=='EUR'||rawCurrency=='eiro')
+                            rawCurrency='Eiro €';
+                    }
+                    if (cellValue === 'beigu datums' && !rawDate) {
+                        rawDate = rows[r + 1]?.[c];
+                    }
+                }
+            }
+    
+            if (rawDate && description && amount) {
+                const formattedDate = formatDateString(rawDate);
+                try {
+                    await axios.post('/income-sources', {
+                        description,
+                        amount: parseFloat(amount),
+                        currency: rawCurrency,
                         updated_at: formattedDate,
                     });
                     fetchIncomeSources();
-                } catch (error) {
-                    console.error('Couldnt upload:', error);
+                } catch (err) {
+                    console.error('Upload failed:', err);
                 }
-                finally {
-                    // Reset the file input value after processing
-                    if (fileInputRef.current) {
-                      fileInputRef.current.value = '';
-                    }
-                  }
+            } else {
+                alert('Could not find all required data in the file.');
             }
-            console.log('Raw Date:', rawDate, typeof rawDate);
         };
-        reader.readAsBinaryString(file);
-    };
+    
+        if (isCSV) {
+            reader.readAsText(file);
+        } else {
+            reader.readAsBinaryString(file);
+        }
+    }; */
+    
 
-    const chartData = {
-        labels: currentItems.map(item => item.description),  // X axis: description
+    const chartIncomeData = {
+        labels: currentItems.map(item => item.description),
         datasets: [
           {
-            label: 'Summa',
-            data: currentItems.map(item => item.amount),       // Y axis: amount
-            backgroundColor: 'rgba(54, 162, 235, 0.6)',         // Light blue bars
+            data: currentItems.map(item => item.amount),
+            backgroundColor: 'rgba(54, 162, 235, 0.6)',
             borderColor: 'rgba(54, 162, 235, 1)',
             borderWidth: 1,
           },
         ],
       };
       
-    const chartOptions = {
+    const chartIncomeOptions = {
         responsive: true,
         indexAxis: 'y',
         plugins: {
-          legend: {
-            position: 'top',
+            legend: {
+                display: false,
+            },
+            title: {
+                display: true,
+                text: 'Ienākumu avoti',
+            },
+        },
+      };
+
+      const chartExpenseData = {
+        labels: currentItems2.map(item => item.description),
+        datasets: [
+          {
+            data: currentItems2.map(item => item.amount),
+            backgroundColor: 'rgba(54, 162, 235, 0.6)',
+            borderColor: 'rgba(54, 162, 235, 1)',
+            borderWidth: 1,
           },
-          title: {
-            display: true,
-            text: 'Ienākumu avoti',
-          },
+        ],
+      };
+      
+    const chartExpenseOptions = {
+        responsive: true,
+        indexAxis: 'y',
+        plugins: {
+            legend: {
+                display: false,
+            },
+            title: {
+                display: true,
+                text: 'Izdevumu avoti',
+            },
         },
       };
     
@@ -383,16 +553,19 @@ export default function Dashboard() {
 
                                             <TextInput id="input_income_source" type="number" placeholder="Apjoms" className="h-10 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200" value={incomeSource} onChange={(e) => setIncomeSource(e.target.value)} required />
                                             <button onClick={addIncomeSource} className="flex items-center h-10 text-white bg-green-700 hover:bg-green-800 rounded-lg text-sm gap-1 px-4 py-2"><VscAdd className="text-lg"/>Pievienot</button>
-                                            <label htmlFor="uploadFile" className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded cursor-pointer">
+                                            <label htmlFor="uploadIncomeFile" className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded cursor-pointer">
                                                 Nolasīt CSV atskaiti
                                             </label>
                                             <input
                                                 type="file"
                                                 accept=".xlsx, .xls, .csv"
-                                                onChange={handleFileUpload}
+                                                onChange={(e) => handleFileUpload(e, 'income')}
+                                                onClick={(e) => {
+                                                    e.target.value = null;
+                                                }}
                                                 className="hidden" 
-                                                id="uploadFile"
-                                                ref={fileInputRef}
+                                                id="uploadIncomeFile"
+                                                ref={incomeFileInputRef}
                                             />
                                             
                                         </div>
@@ -513,7 +686,7 @@ export default function Dashboard() {
                                                 </tbody>
                                             </table>
                                             <div className="my-8">
-                                                <Bar data={chartData} options={chartOptions} />
+                                                <Bar data={chartIncomeData} options={chartIncomeOptions} />
                                             </div>
                                             <p className="font-bold text-gray-900 dark:text-gray-200 mt-2">Kopā: {totalSum.toFixed(2)}</p>
                                             <Pagination pageCount={pageCount} onPageChange={handlePageChangeIncome} />
@@ -521,9 +694,7 @@ export default function Dashboard() {
                                         )}
                                     </div>
                                 </div>
-                                
-
-
+                                //
                                 <div className="pt-5">
                                     <h2 className="text-lg font-bold text-gray-900 dark:text-gray-200">Izdevumu avoti</h2>
                                     <div className="space-y-2">
@@ -537,6 +708,20 @@ export default function Dashboard() {
 
                                             <TextInput id="input_expense_source" type="number" placeholder="Apjoms" className="h-10 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200" value={expenseSource} onChange={(e) => setExpenseSource(e.target.value)} required />
                                             <button onClick={addExpenseSource} className="flex items-center h-10 text-white bg-green-700 hover:bg-green-800 rounded-lg text-sm gap-1 px-4 py-2"><VscAdd className="text-lg"/>Pievienot</button>
+                                            <label htmlFor="uploadExpenseFile" className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded cursor-pointer">
+                                                Nolasīt CSV atskaiti
+                                            </label>
+                                            <input
+                                                type="file"
+                                                accept=".xlsx, .xls, .csv"
+                                                onChange={(e) => handleFileUpload(e, 'expense')}
+                                                onClick={(e) => {
+                                                    e.target.value = null;
+                                                }}
+                                                className="hidden" 
+                                                id="uploadExpenseFile"
+                                                ref={expenseFileInputRef}
+                                            />
                                         </div>
 
                                         {expenseSources?.length > 0 &&(
@@ -599,7 +784,7 @@ export default function Dashboard() {
                                                             </td>
 
                                                             <td className="border px-4 py-2">
-                                                                {formatInTimeZone(new Date(source.updated_at), 'Europe/Riga', 'yyyy-MM-dd HH:mm:ss')}
+                                                                {formatInTimeZone(new Date(source.updated_at), 'Europe/Riga', 'dd/MM/yyyy')}
                                                             </td>
 
                                                             <td className="border px-4 py-2">
@@ -647,6 +832,9 @@ export default function Dashboard() {
                                                     ))}
                                                 </tbody>
                                             </table>
+                                            <div className="my-8">
+                                                <Bar data={chartExpenseData} options={chartExpenseOptions} />
+                                            </div>
                                             <p className="font-bold text-gray-900 dark:text-gray-200 mt-2">Kopā: {totalSum2.toFixed(2)}</p>
                                             <Pagination pageCount={pageCount2} onPageChange={handlePageChangeExpense} />
                                         </div>

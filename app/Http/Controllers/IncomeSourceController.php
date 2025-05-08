@@ -17,11 +17,16 @@ class IncomeSourceController extends Controller
         return response()->json(['message' => 'Ienākumu avots saglabāts veiksmīgi']);
     } 
 
-    public function index()
+    public function index(Request $request)
     {
-        $incomeSources = IncomeSource::all();
-        $sum = $incomeSources->sum("amount");
-        return response()->json(["incomeSources" => $incomeSources, "sum" => $sum]);
+        $month = $request->query('month');
+        $incomeSources = IncomeSource::query();
+        if ($month) {
+            $incomeSources->whereMonth('updated_at', $month);
+        }
+        $filteredIncomeSources = $incomeSources->get();
+        $sum = $filteredIncomeSources->sum('amount');
+        return response()->json(["incomeSources" => $filteredIncomeSources, "sum" => $sum]);
     }
 
     public function update(Request $request, $id)
