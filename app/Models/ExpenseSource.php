@@ -9,6 +9,7 @@ class ExpenseSource extends Model
     protected $fillable = [
         'description',
         'amount',
-        'currency'
+        'currency',
+        'updated_at'
     ];
 }

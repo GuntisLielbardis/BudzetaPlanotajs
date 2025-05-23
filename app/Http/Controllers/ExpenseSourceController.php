@@ -14,7 +14,7 @@ class ExpenseSourceController extends Controller
             'updated_at' => 'nullable|date_format:Y-m-d'
         ]);
         ExpenseSource::create($validatedData);
-        return response()->json(['message' => 'Expense source saved successfully']);
+        return response()->json(['message' => 'Izdevumu avots saglabāts veiksmīgi']);
     } 
 
     public function index(Request $request)
@@ -43,18 +43,18 @@ class ExpenseSourceController extends Controller
             'amount' => $request->amount,
             'currency' => $request->currency,
         ]);
-        return response()->json(['message' => 'Ienākumu avots atjaunināts!']);
+        return response()->json(['message' => 'Izdevumu avots atjaunināts!']);
     }
 
     public function destroy(ExpenseSource $expenseSource)
     {
         if ($expenseSource) {
             $expenseSource->delete();
-            return response()->json(['message' => 'Expense source deleted successfully.']);
+            return response()->json(['message' => 'Izdevumu avots veiksmīgi dzēsts.']);
         } 
         else 
         {
-            return response()->json(['message' => 'Expense source not found.'], 404);
+            return response()->json(['message' => 'Izdevumu avots netika atrasts.'], 404);
         }
     }
 }

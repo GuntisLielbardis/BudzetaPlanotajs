@@ -236,35 +236,25 @@ export default function Dashboard() {
     const handlePageChangeExpense = ({ selected }) => {
         setCurrentPageExpense(selected);
     };
-
-    const formatDateString = (inputDate) => {
-        const parts = inputDate.split('/');
-        const day = parts[0];
-        const month = parts[1];
-        const year = parts[2];
-        return `${year}-${month}-${day}`;
-    };
     
     const incomeFileInputRef = useRef(null);
     const expenseFileInputRef = useRef(null);
-    const handleFileUpload = async (e, dataType) => {
+    const handleFileUpload = async (e, dataType, currentFileInputRef) => {
         const file = e.target.files[0];
         if (!file) return;
     
         const isCSV = file.name.endsWith('.csv');
+        const isXLS = file.name.endsWith('.xls');
         const reader = new FileReader();
     
         reader.onload = async (evt) => {
             const data = evt.target.result;
             let rows;
+            let worksheet;
     
-            if (isCSV) {
+            if (isCSV||isXLS) {
                 const workbook = XLSX.read(data, { type: 'string' });
-                const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-                rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-            } else {
-                const workbook = XLSX.read(data, { type: 'binary' });
-                const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                worksheet = workbook.Sheets[workbook.SheetNames[0]];
                 rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
             }
     
@@ -273,10 +263,10 @@ export default function Dashboard() {
             let rawCurrency = null;
             let rawDate = null;
             const labelKeywords = {
-                description: 'komentārs',
-                amount: 'kopā eur',
+                description: 'apraksts',
+                amount: 'apjoms',
                 currency: 'valūta',
-                date: 'beigu datums',
+                date: 'datums',
             };
     
             const labelsToFind = {
@@ -295,7 +285,7 @@ export default function Dashboard() {
                         amount = rows[r + 1]?.[c];
                     }
                     if (cellValue === currentLabels.currency && !rawCurrency) {
-                        rawCurrency = rows[r + 1]?.[c] || 'Eiro €';
+                        rawCurrency = rows[r + 1]?.[c] || 'Valūta';
                         if (rawCurrency?.toUpperCase() === 'EUR' || rawCurrency?.toLowerCase() === 'eiro') {
                             rawCurrency = 'Eiro €';
                         }
@@ -307,7 +297,7 @@ export default function Dashboard() {
             }
     
             if (rawDate && description && amount) {
-                const formattedDate = formatDateString(rawDate);
+                const formattedDate = XLSX.SSF.format('yyyy-mm-dd', rawDate);
                 const endpoint = dataType === 'income' ? '/income-sources' : '/expense-sources';
                 const fetchFunction = dataType === 'income' ? fetchIncomeSources : fetchExpenseSources;
     
@@ -320,14 +310,15 @@ export default function Dashboard() {
                     });
                     fetchFunction();
                 } catch (err) {
-                    console.error(`Upload failed for ${dataType}:`, err);
+                    console.error;
+                    alert(`Nevarēja atrast un nolasīt visus nepieciešamos datus.`);
                 } finally {
-                    if (fileInputRef.current) {
-                        fileInputRef.current.value = null;
+                    if (currentFileInputRef.current) {
+                        currentFileInputRef.current.value = null;
                     }
                 }
             } else {
-                alert(`Could not find all required data for ${dataType} in the file.`);
+                alert(`Nevarēja atrast un nolasīt visus nepieciešamos datus.`);
             }
         };
     
@@ -337,78 +328,6 @@ export default function Dashboard() {
             reader.readAsBinaryString(file);
         }
     };
-    /* const handleFileUpload = async (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-    
-        const isCSV = file.name.endsWith('.csv');
-        const reader = new FileReader();
-    
-        reader.onload = async (evt) => {
-            const data = evt.target.result;
-            let rows;
-    
-            if (isCSV) {
-                const workbook = XLSX.read(data, { type: 'string' });
-                const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-                rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-            } else {
-                const workbook = XLSX.read(data, { type: 'binary' });
-                const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-                rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-            }
-    
-            let description = null;
-            let amount = null;
-            let rawCurrency = null;
-            let rawDate = null;
-    
-            for (let r = 0; r < rows.length; r++) {
-                for (let c = 0; c < rows[r].length; c++) {
-                    const cellValue = String(rows[r][c] || '').toLowerCase().trim();
-                    if (cellValue === 'komentārs' && !description) {
-                        description = rows[r + 1]?.[c];
-                    }
-                    if (cellValue === 'kopā eur' && !amount) {
-                        amount = rows[r + 1]?.[c];
-                    }
-                    if (cellValue === 'valūta' && !rawCurrency) {
-                        rawCurrency = rows[r + 1]?.[c] || 'Eiro €';
-                        console.log("Raw"+rawCurrency);
-                        if (rawCurrency=='EUR'||rawCurrency=='eiro')
-                            rawCurrency='Eiro €';
-                    }
-                    if (cellValue === 'beigu datums' && !rawDate) {
-                        rawDate = rows[r + 1]?.[c];
-                    }
-                }
-            }
-    
-            if (rawDate && description && amount) {
-                const formattedDate = formatDateString(rawDate);
-                try {
-                    await axios.post('/income-sources', {
-                        description,
-                        amount: parseFloat(amount),
-                        currency: rawCurrency,
-                        updated_at: formattedDate,
-                    });
-                    fetchIncomeSources();
-                } catch (err) {
-                    console.error('Upload failed:', err);
-                }
-            } else {
-                alert('Could not find all required data in the file.');
-            }
-        };
-    
-        if (isCSV) {
-            reader.readAsText(file);
-        } else {
-            reader.readAsBinaryString(file);
-        }
-    }; */
-    
 
     const chartIncomeData = {
         labels: currentItems.map(item => item.description),
@@ -559,7 +478,7 @@ export default function Dashboard() {
                                             <input
                                                 type="file"
                                                 accept=".xlsx, .xls, .csv"
-                                                onChange={(e) => handleFileUpload(e, 'income')}
+                                                onChange={(e) => handleFileUpload(e, 'income', incomeFileInputRef)}
                                                 onClick={(e) => {
                                                     e.target.value = null;
                                                 }}
@@ -633,11 +552,7 @@ export default function Dashboard() {
 
                                                             
                                                             <td className="border px-4 py-2">
-                                                            {source.updated_at ? (
-                                                                formatInTimeZone(new Date(source.updated_at), 'Europe/Riga', 'dd/MM/yyyy')
-                                                            ) : (
-                                                                ''
-                                                            )}
+                                                                {source.updated_at ? (formatInTimeZone(new Date(source.updated_at), 'Europe/Riga', 'dd/MM/yyyy')) : ('')}
                                                             </td>
 
                                                             <td className="border px-4 py-2">
@@ -645,14 +560,12 @@ export default function Dashboard() {
                                                                     <>
                                                                         <button
                                                                             onClick={() => saveEdit(source.id)}
-                                                                            className="text-white bg-green-600 hover:bg-green-700 px-3 py-1 rounded"
-                                                                        >
+                                                                            className="text-white bg-green-600 hover:bg-green-700 px-3 py-1 rounded">
                                                                             Saglabāt
                                                                         </button>
                                                                         <button
                                                                             onClick={() => setEditingRowId(null)}
-                                                                            className="ml-2 text-white bg-gray-500 hover:bg-gray-600 px-3 py-1 rounded"
-                                                                        >
+                                                                            className="ml-2 text-white bg-gray-500 hover:bg-gray-600 px-3 py-1 rounded">
                                                                             Atcelt
                                                                         </button>
                                                                     </>
@@ -660,15 +573,13 @@ export default function Dashboard() {
                                                                     <div className="flex gap-2">
                                                                         <button
                                                                             onClick={() => startEditing(source)}
-                                                                            className="flex items-center gap-1 text-white bg-blue-700 hover:bg-blue-800 rounded-lg text-sm px-4 py-2"
-                                                                        >
+                                                                            className="flex items-center gap-1 text-white bg-blue-700 hover:bg-blue-800 rounded-lg text-sm px-4 py-2">
                                                                             <VscEdit className="text-lg" /> Rediģēt
                                                                         </button>
 
                                                                         <button
                                                                             onClick={() => openModal(source.id, "income")}
-                                                                            className="flex items-center gap-1 text-white bg-red-700 hover:bg-red-800 rounded-lg text-sm px-4 py-2"
-                                                                        >
+                                                                            className="flex items-center gap-1 text-white bg-red-700 hover:bg-red-800 rounded-lg text-sm px-4 py-2">
                                                                             <VscTrash className="text-lg" /> Dzēst
                                                                         </button>
 
@@ -694,7 +605,7 @@ export default function Dashboard() {
                                         )}
                                     </div>
                                 </div>
-                                //
+                                
                                 <div className="pt-5">
                                     <h2 className="text-lg font-bold text-gray-900 dark:text-gray-200">Izdevumu avoti</h2>
                                     <div className="space-y-2">
@@ -714,7 +625,7 @@ export default function Dashboard() {
                                             <input
                                                 type="file"
                                                 accept=".xlsx, .xls, .csv"
-                                                onChange={(e) => handleFileUpload(e, 'expense')}
+                                                onChange={(e) => handleFileUpload(e, 'expense', expenseFileInputRef)}
                                                 onClick={(e) => {
                                                     e.target.value = null;
                                                 }}
@@ -747,9 +658,7 @@ export default function Dashboard() {
                                                                         onChange={(e) => setEditedExpense((prev) => ({ ...prev, description: e.target.value }))}
                                                                         className="border rounded px-2 py-1 bg-white dark:bg-gray-700 w-full"
                                                                     />
-                                                                ) : (
-                                                                    source.description
-                                                                )}
+                                                                ) : (source.description)                                                               }
                                                             </td>
 
                                                             <td className="border px-4 py-2">

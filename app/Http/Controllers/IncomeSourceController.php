@@ -15,7 +15,7 @@ class IncomeSourceController extends Controller
         ]);
         IncomeSource::create($validatedData);
         return response()->json(['message' => 'Ienākumu avots saglabāts veiksmīgi']);
-    } 
+    }
 
     public function index(Request $request)
     {
