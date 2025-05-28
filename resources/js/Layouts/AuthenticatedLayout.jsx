@@ -30,6 +30,12 @@ export default function AuthenticatedLayout({ header, children }) {
                                 >
                                     <div className="dark:text-white">Informācijas panelis</div>
                                 </NavLink>
+                                <NavLink
+                                    href={route('about')}
+                                    active={route().current('about')}
+                                >
+                                    <div className="dark:text-white">Par aplikāciju</div>
+                                </NavLink>
                             </div>
                         </div>
 

@@ -10,6 +10,12 @@ class ExpenseSource extends Model
         'description',
         'amount',
         'currency',
-        'updated_at'
+        'updated_at',
+        'user_id',
+        'category',
     ];
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 }

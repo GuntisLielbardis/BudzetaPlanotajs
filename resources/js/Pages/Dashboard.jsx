@@ -29,6 +29,7 @@ export default function Dashboard() {
     const [editedIncome, setEditedIncome] = useState({});
     const [errorMessage, setErrorMessage] = useState("");
     const [monthFilter, setMonthFilter] = useState('');
+    const [selectedCategory, setSelectedCategory] = useState('');
 
     const addIncomeSource = async () => {
         if (!description.trim() || !incomeSource) {
@@ -73,7 +74,7 @@ export default function Dashboard() {
 
     useEffect(() => {
         fetchExpenseSources();
-    }, [monthFilter]);
+    }, [monthFilter, selectedCategory]);
     
     const [incomeSources, setIncomeSources] = useState([]);
     
@@ -82,7 +83,8 @@ export default function Dashboard() {
         setEditedIncome({ 
             description: source.description, 
             amount: source.amount,
-            currency: source.currency
+            currency: source.currency,
+            updated_at: source.updated_at
         });
     };
     
@@ -92,7 +94,8 @@ export default function Dashboard() {
             const payload = {
                 description: editedIncome.description ?? originalSource.description,
                 amount: editedIncome.amount ?? originalSource.amount,
-                currency: editedIncome.currency ?? originalSource.currency
+                currency: editedIncome.currency ?? originalSource.currency,
+                updated_at: editedIncome.updated_at ?? originalSource.updated_at
             };
             await axios.put(`/income-sources/${id}`, payload);
             fetchIncomeSources();
@@ -123,24 +126,28 @@ export default function Dashboard() {
             currency: selectedCurrency,
             description: description2,
             amount: expenseSource,
+            category: selectedCategory,
         });
         fetchExpenseSources();
         setDescription2(""); 
         setExpenseSource("");
-    }; 
+        setSelectedCategory('');
+    };
 
     const fetchExpenseSources = async () => {
-        const params = new URLSearchParams();
-        if (monthFilter) {
-            params.append('month', monthFilter);
-        }
+       try {
+            const params = {
+                month: monthFilter,
+                category: selectedCategory,
+            };
 
-        try {
-            const response = await axios.get(`/expense-sources?${params.toString()}`);
-            setExpenseSources(response.data.expenseSources || []);
+            const queryString = new URLSearchParams(params).toString();
+            const response = await axios.get(`/expense-sources?${queryString}`);
+            setExpenseSources(response.data.expenseSources);
             getTotalSum2(response.data.sum);
-        } catch (error) {
-            console.error('Failed to fetch expense sources:', error);
+        } 
+        catch (error) {
+            console.error('Error fetching expense sources:', error);
         }
     };
 
@@ -151,7 +158,9 @@ export default function Dashboard() {
         setEditedExpense({ 
             description: source.description, 
             amount: source.amount,
-            currency: source.currency
+            currency: source.currency,
+            updated_at: source.updated_at,
+            category: source.category ==='' ? 'Cits' : source.category
         });
     };
     
@@ -161,7 +170,9 @@ export default function Dashboard() {
             const payload2 = {
                 description: editedExpense.description ?? originalSource2.description,
                 amount: editedExpense.amount ?? originalSource2.amount,
-                currency: editedExpense.currency ?? originalSource2.currency
+                currency: editedExpense.currency ?? originalSource2.currency,
+                updated_at: editedExpense.updated_at ?? originalSource2.updated_at,
+                category: editedExpense.category ?? originalSource2.category,
             };
             await axios.put(`/expense-sources/${id}`, payload2);
             fetchExpenseSources();
@@ -334,41 +345,16 @@ export default function Dashboard() {
         datasets: [
           {
             data: currentItems.map(item => item.amount),
-            backgroundColor: 'rgba(54, 162, 235, 0.6)',
-            borderColor: 'rgba(54, 162, 235, 1)',
+            backgroundColor: 'rgba(86, 237, 139, 0.8)',
+            borderColor: 'rgb(0, 0, 0)',
             borderWidth: 1,
           },
         ],
-      };
+    };
       
     const chartIncomeOptions = {
         responsive: true,
-        indexAxis: 'y',
-        plugins: {
-            legend: {
-                display: false,
-            },
-            title: {
-                display: true,
-                text: 'Ienākumu avoti',
-            },
-        },
-      };
-
-      const chartExpenseData = {
-        labels: currentItems2.map(item => item.description),
-        datasets: [
-          {
-            data: currentItems2.map(item => item.amount),
-            backgroundColor: 'rgba(54, 162, 235, 0.6)',
-            borderColor: 'rgba(54, 162, 235, 1)',
-            borderWidth: 1,
-          },
-        ],
-      };
-      
-    const chartExpenseOptions = {
-        responsive: true,
+        maintainAspectRatio: false,
         indexAxis: 'y',
         plugins: {
             legend: {
@@ -379,7 +365,62 @@ export default function Dashboard() {
                 text: 'Izdevumu avoti',
             },
         },
-      };
+        scales: {
+            y: {
+                beginAtZero: true,
+                barThickness: 3,
+            },
+            x: {
+                beginAtZero: true,
+                ticks: {
+                    callback: function(value) {
+                        return value.toFixed(2);
+                    }
+                }
+            }
+        }
+    };
+
+    const chartExpenseData = {
+        labels: currentItems2.map(item => item.description),
+        datasets: [
+            {
+            data: currentItems2.map(item => item.amount),
+            backgroundColor: 'rgba(232, 75, 44, 0.8)',
+            borderColor: 'rgb(0, 0, 0)',
+            borderWidth: 1,
+            },
+        ],
+    };
+      
+    const chartExpenseOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        indexAxis: 'y',
+        plugins: {
+            legend: {
+                display: false,
+            },
+            title: {
+                display: true,
+                text: 'Izdevumu avoti',
+            },
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                barThickness: 3,
+            },
+            x: {
+                beginAtZero: true,
+                ticks: {
+                    callback: function(value) {
+                        return value.toFixed(2);
+                    }
+                }
+            }
+        }
+    };
     
     return (
         <AuthenticatedLayout
@@ -444,8 +485,8 @@ export default function Dashboard() {
                                 <div className="pt-5">
                                     <h2 className="text-lg font-bold text-gray-900 dark:text-gray-200">Ienākumu avoti</h2>
                                     <div className="mb-4">
-                                        <label htmlFor="FilterMonth" className="mr-2">Filtrēt pēc mēneša:</label>
-                                        <select id="FilterMonth" onChange={handleMonthChange} className="rounded-md px-3 py-2">
+                                        <label htmlFor="FilterMonth" className="mr-2 dark:text-gray-200">Filtrēt pēc mēneša:</label>
+                                        <select id="FilterMonth" onChange={handleMonthChange} className="rounded-md px-3 py-2 dark:bg-gray-700 dark:text-gray-400">
                                             <option value="">Visi mēneši</option>
                                             <option value="01">Janvāris</option>
                                             <option value="02">Februāris</option>
@@ -549,10 +590,25 @@ export default function Dashboard() {
                                                                     source.currency
                                                                 )}
                                                             </td>
-
                                                             
                                                             <td className="border px-4 py-2">
-                                                                {source.updated_at ? (formatInTimeZone(new Date(source.updated_at), 'Europe/Riga', 'dd/MM/yyyy')) : ('')}
+                                                                {editingRowId === source.id ? (
+                                                                    <input
+                                                                        type="date"
+                                                                        value={editedIncome.updated_at ?? ""}
+                                                                        onChange={(e) =>
+                                                                            setEditedIncome((prev) => ({
+                                                                                ...prev,
+                                                                                updated_at: e.target.value,
+                                                                            }))
+                                                                        }
+                                                                        className="border rounded px-2 py-1 bg-white dark:bg-gray-700 w-full"
+                                                                    />
+                                                                ) : (
+                                                                    source.updated_at
+                                                                        ? formatInTimeZone(new Date(source.updated_at), 'Europe/Riga', 'dd/MM/yyyy')
+                                                                        : ''
+                                                                )}
                                                             </td>
 
                                                             <td className="border px-4 py-2">
@@ -596,7 +652,7 @@ export default function Dashboard() {
                                                     ))}
                                                 </tbody>
                                             </table>
-                                            <div className="my-8">
+                                            <div style={{ width: '60%', margin: '0 auto' }}>
                                                 <Bar data={chartIncomeData} options={chartIncomeOptions} />
                                             </div>
                                             <p className="font-bold text-gray-900 dark:text-gray-200 mt-2">Kopā: {totalSum.toFixed(2)}</p>
@@ -618,6 +674,23 @@ export default function Dashboard() {
                                             />
 
                                             <TextInput id="input_expense_source" type="number" placeholder="Apjoms" className="h-10 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200" value={expenseSource} onChange={(e) => setExpenseSource(e.target.value)} required />
+                                                <div className="mb-4">
+                                                    <label htmlFor="ChangeCategory" className="mr-2 dark:text-gray-200">Filtrēt pēc kategorijas:</label>
+                                                    <select 
+                                                            id="ChangeCategory"
+                                                            value={selectedCategory}
+                                                            onChange={(e) => setSelectedCategory(e.target.value)}
+                                                            className="rounded-md px-3 py-2 dark:bg-gray-700 dark:text-gray-400">
+                                                        <option value="">Visas kategorijas</option>
+                                                        <option value="Pārtika">Pārtika</option>
+                                                        <option value="Transports">Transports</option>
+                                                        <option value="Rēķini">Rēķini</option>
+                                                        <option value="Neparedzēti izdevumi">Neparedzēti izdevumi</option>
+                                                        <option value="Dāvanas">Dāvanas</option>
+                                                        <option value="Sadzīves preces">Sadzīves preces</option>
+                                                        <option value="Cits">Cits</option>
+                                                    </select>
+                                                </div>
                                             <button onClick={addExpenseSource} className="flex items-center h-10 text-white bg-green-700 hover:bg-green-800 rounded-lg text-sm gap-1 px-4 py-2"><VscAdd className="text-lg"/>Pievienot</button>
                                             <label htmlFor="uploadExpenseFile" className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded cursor-pointer">
                                                 Nolasīt CSV atskaiti
@@ -644,6 +717,7 @@ export default function Dashboard() {
                                                         <th className="border px-4 py-2">Summa</th>
                                                         <th className="border px-4 py-2">Valūta</th>
                                                         <th className="border px-4 py-2">Datums</th>
+                                                        <th className="border px-4 py-2">Kategorija</th>
                                                         <th className="border px-4 py-2">Modifikācijas</th>
                                                     </tr>
                                                 </thead>
@@ -693,7 +767,48 @@ export default function Dashboard() {
                                                             </td>
 
                                                             <td className="border px-4 py-2">
-                                                                {formatInTimeZone(new Date(source.updated_at), 'Europe/Riga', 'dd/MM/yyyy')}
+                                                                {editingRowId2 === source.id ? (
+                                                                    <input
+                                                                        type="date"
+                                                                        value={editedExpense.updated_at ?? ""}
+                                                                        onChange={(e) =>
+                                                                            setEditedExpense((prev) => ({
+                                                                                ...prev,
+                                                                                updated_at: e.target.value,
+                                                                            }))
+                                                                        }
+                                                                        className="border rounded px-2 py-1 bg-white dark:bg-gray-700 w-full"
+                                                                    />
+                                                                ) : (
+                                                                    source.updated_at
+                                                                        ? formatInTimeZone(new Date(source.updated_at), 'Europe/Riga', 'dd/MM/yyyy')
+                                                                        : ''
+                                                                )}
+                                                            </td>
+
+                                                            <td className="border px-4 py-2">
+                                                                {editingRowId2 === source.id ? (
+                                                                    <select
+                                                                        value={editedExpense.category ?? source.category ?? ''}
+                                                                        onChange={(e) =>
+                                                                            setEditedExpense((prev) => ({
+                                                                                ...prev,
+                                                                                category: e.target.value,
+                                                                            }))
+                                                                        }
+                                                                        className="border rounded px-2 py-1 bg-white dark:bg-gray-700 w-full"
+                                                                    >
+                                                                        <option value="Cits">Izvēlēties kategoriju</option>
+                                                                        <option value="Pārtika">Pārtika</option>
+                                                                        <option value="Transports">Transports</option>
+                                                                        <option value="Rēķini">Rēķini</option>
+                                                                        <option value="Neparedzēti izdevumi">Neparedzēti izdevumi</option>
+                                                                        <option value="Dāvanas">Dāvanas</option>
+                                                                        <option value="Sadzīves preces">Sadzīves preces</option>
+                                                                    </select>
+                                                                ) : (
+                                                                    source.category || ''
+                                                                )}
                                                             </td>
 
                                                             <td className="border px-4 py-2">
@@ -741,7 +856,7 @@ export default function Dashboard() {
                                                     ))}
                                                 </tbody>
                                             </table>
-                                            <div className="my-8">
+                                            <div style={{ width: '60%', margin: '0 auto' }}>
                                                 <Bar data={chartExpenseData} options={chartExpenseOptions} />
                                             </div>
                                             <p className="font-bold text-gray-900 dark:text-gray-200 mt-2">Kopā: {totalSum2.toFixed(2)}</p>
