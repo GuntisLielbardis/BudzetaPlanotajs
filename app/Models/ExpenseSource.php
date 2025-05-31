@@ -14,6 +14,9 @@ class ExpenseSource extends Model
         'user_id',
         'category',
     ];
+    protected $casts = [
+        'amount' => 'decimal:2',
+    ];
     public function user()
     {
         return $this->belongsTo(User::class);
