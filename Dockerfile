@@ -1,17 +1,20 @@
-FROM richarvey/nginx-php-fpm:latest
+FROM php:8.2-cli
 WORKDIR /var/www/html
+RUN apt-get update && apt-get install -y \
+    git \
+    unzip \
+    curl \
+    libzip-dev \
+    zip \
+    libpq-dev \
+    && docker-php-ext-install pdo pdo_pgsql zip
+
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 COPY . .
 RUN composer install --no-dev --optimize-autoloader
-RUN apk add --no-cache nodejs npm && \
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
+    apt-get install -y nodejs && \
     npm install && \
     npm run build
-RUN mkdir -p database && \
-    touch database/database.sqlite && \
-    chown -R www-data:www-data storage bootstrap/cache database && \
-    chmod -R 775 storage bootstrap/cache database
-RUN php artisan config:clear && \
-    php artisan route:clear && \
-    php artisan view:clear && \
-    php artisan optimize
-EXPOSE 80
-CMD ["/start.sh"]
+EXPOSE 8000
+CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8000"]
