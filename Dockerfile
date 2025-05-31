@@ -12,6 +12,7 @@ RUN apt-get update && apt-get install -y \
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 COPY . .
 
+RUN php artisan migrate
 RUN composer install --no-dev --optimize-autoloader
 RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
     apt-get install -y nodejs && \
