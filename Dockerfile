@@ -14,3 +14,4 @@ RUN php artisan config:clear && \
     php artisan view:clear && \
     php artisan optimize
 EXPOSE 80
+CMD ["/start.sh"]
