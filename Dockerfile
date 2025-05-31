@@ -4,7 +4,8 @@ WORKDIR /var/www/html
 COPY composer.json composer.lock ./
 RUN composer install --no-dev --optimize-autoloader --no-scripts
 COPY . .
-RUN curl -fsSL https://deb.nodesource.com/setup_lts.x | bash - && \
+RUN apt-get update && \
+    curl -fsSL https://deb.nodesource.com/setup_lts.x | bash - && \
     apt-get install -y nodejs && \
     npm install && \
     npm run build # Run your Vite build here
