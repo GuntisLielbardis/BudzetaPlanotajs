@@ -7,7 +7,7 @@ import Dropdown from '@/Components/Dropdown';
 import { useState, useEffect } from "react";
 import axios from 'axios';
 import { VscAdd, VscTrash, VscEdit } from "react-icons/vsc";
-import ConfirmDelete from "@/components/ConfirmDelete";
+import ConfirmDelete from "@/Components/ConfirmDelete";
 import Pagination from "@/Components/Pagination";
 import { formatInTimeZone } from 'date-fns-tz';
 import * as XLSX from 'xlsx';
