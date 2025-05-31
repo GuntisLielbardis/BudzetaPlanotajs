@@ -6,9 +6,7 @@ import InputError from '@/Components/InputError';
 import Dropdown from '@/Components/Dropdown';
 import { useState, useEffect } from "react";
 import axios from 'axios';
-import { VscTrash } from "react-icons/vsc";
-import { VscAdd } from "react-icons/vsc";
-import { VscEdit } from "react-icons/vsc";
+import { VscAdd, VscTrash, VscEdit } from "react-icons/vsc";
 import ConfirmDelete from "@/components/ConfirmDelete";
 import Pagination from "@/Components/Pagination";
 import { formatInTimeZone } from 'date-fns-tz';
@@ -27,17 +25,18 @@ export default function Dashboard() {
     const [description, setDescription] = useState("");
     const [editingRowId, setEditingRowId] = useState(null);
     const [editedIncome, setEditedIncome] = useState({});
-    const [errorMessage, setErrorMessage] = useState("");
+    const [errorMessageIncome, setIncomeErrorMessage] = useState("");
+    const [errorMessageExpense, setExpenseErrorMessage] = useState("");
     const [monthFilter, setMonthFilter] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('');
 
     const addIncomeSource = async () => {
         if (!description.trim() || !incomeSource) {
-            setErrorMessage("Lūdzu aizpildiet abus laukus!");
+            setIncomeErrorMessage("Lūdzu aizpildiet abus laukus!");
             return;
         }
     
-        setErrorMessage("");
+        setIncomeErrorMessage("");
         await axios.post('/income-sources', {
             currency: selectedCurrency,
             description: description,
@@ -122,6 +121,12 @@ export default function Dashboard() {
     const [editedExpense, setEditedExpense] = useState({});
 
     const addExpenseSource = async () => {
+        if (!description2.trim() || !expenseSource) {
+            setExpenseErrorMessage("Lūdzu aizpildiet abus laukus!");
+            return;
+        }
+        
+        setExpenseErrorMessage("");
         await axios.post('/expense-sources', {
             currency: selectedCurrency,
             description: description2,
@@ -362,7 +367,7 @@ export default function Dashboard() {
             },
             title: {
                 display: true,
-                text: 'Izdevumu avoti',
+                text: 'Ienākumu avoti',
             },
         },
         scales: {
@@ -530,7 +535,7 @@ export default function Dashboard() {
                                             
                                         </div>
 
-                                        {errorMessage && (<p className="text-red-500 font-semibold">{errorMessage}</p>)}
+                                        {errorMessageIncome && (<p className="text-red-500 font-semibold">{errorMessageIncome}</p>)}
 
                                         {incomeSources?.length > 0 &&(
                                         <div>
@@ -674,7 +679,12 @@ export default function Dashboard() {
                                             />
 
                                             <TextInput id="input_expense_source" type="number" placeholder="Apjoms" className="h-10 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200" value={expenseSource} onChange={(e) => setExpenseSource(e.target.value)} required />
-                                                <div className="mb-4">
+                                            <button onClick={addExpenseSource} className="flex items-center h-10 text-white bg-green-700 hover:bg-green-800 rounded-lg text-sm gap-1 px-4 py-2"><VscAdd className="text-lg"/>Pievienot</button>
+                                            <label htmlFor="uploadExpenseFile" className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded cursor-pointer">
+                                                Nolasīt CSV atskaiti
+                                            </label>
+                                            <br></br>
+                                            <div className="mb-4">
                                                     <label htmlFor="ChangeCategory" className="mr-2 dark:text-gray-200">Filtrēt pēc kategorijas:</label>
                                                     <select 
                                                             id="ChangeCategory"
@@ -691,10 +701,6 @@ export default function Dashboard() {
                                                         <option value="Cits">Cits</option>
                                                     </select>
                                                 </div>
-                                            <button onClick={addExpenseSource} className="flex items-center h-10 text-white bg-green-700 hover:bg-green-800 rounded-lg text-sm gap-1 px-4 py-2"><VscAdd className="text-lg"/>Pievienot</button>
-                                            <label htmlFor="uploadExpenseFile" className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded cursor-pointer">
-                                                Nolasīt CSV atskaiti
-                                            </label>
                                             <input
                                                 type="file"
                                                 accept=".xlsx, .xls, .csv"
@@ -707,6 +713,8 @@ export default function Dashboard() {
                                                 ref={expenseFileInputRef}
                                             />
                                         </div>
+
+                                        {errorMessageExpense && (<p className="text-red-500 font-semibold">{errorMessageExpense}</p>)}
 
                                         {expenseSources?.length > 0 &&(
                                         <div>
@@ -876,7 +884,6 @@ export default function Dashboard() {
                                         <span className="text-gray-700 dark:text-gray-400"> Ienākumi sakrīt ar izdevumiem</span>
                                     )}
                                 </div>
-
                             </div>
                         </div>
                     </div>

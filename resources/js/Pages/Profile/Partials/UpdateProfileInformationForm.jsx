@@ -20,7 +20,6 @@ export default function UpdateProfileInformation({
 
     const submit = (e) => {
         e.preventDefault();
-
         patch(route('profile.update'));
     };
 
@@ -39,7 +38,6 @@ export default function UpdateProfileInformation({
             <form onSubmit={submit} className="mt-6 space-y-6">
                 <div>
                     <InputLabel htmlFor="name" value="Vārds" className="dark:text-gray-200"/>
-
                     <TextInput
                         id="name"
                         className="mt-1 block w-full bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
@@ -49,13 +47,11 @@ export default function UpdateProfileInformation({
                         isFocused
                         autoComplete="name"
                     />
-
                     <InputError className="mt-2" message={errors.name} />
                 </div>
 
                 <div>
                     <InputLabel htmlFor="email" value="E-pasts" className="dark:text-gray-200"/>
-
                     <TextInput
                         id="email"
                         type="email"
@@ -65,28 +61,26 @@ export default function UpdateProfileInformation({
                         required
                         autoComplete="username"
                     />
-
                     <InputError className="mt-2" message={errors.email} />
                 </div>
 
                 {mustVerifyEmail && user.email_verified_at === null && (
                     <div>
                         <p className="mt-2 text-sm text-gray-800 dark:text-gray-200">
-                            Your email address is unverified.
+                            Jūsu e-pasta adrese nav verificēta.
                             <Link
                                 href={route('verification.send')}
                                 method="post"
                                 as="button"
                                 className="rounded-md text-sm text-gray-600 dark:text-gray-400 underline hover:text-gray-900 dark:hover:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
                             >
-                                Click here to re-send the verification email.
+                                Spiediet šeit, lai pārsūtītu e-pastu verifikācijai.
                             </Link>
                         </p>
 
                         {status === 'verification-link-sent' && (
                             <div className="mt-2 text-sm font-medium text-green-600">
-                                A new verification link has been sent to your
-                                email address.
+                                Jauna verifikācijas saite tika nosūtīta uz Jūsu e-pastu.
                             </div>
                         )}
                     </div>
@@ -103,7 +97,7 @@ export default function UpdateProfileInformation({
                         leaveTo="opacity-0"
                     >
                         <p className="text-sm text-gray-600">
-                            Saved.
+                            Izmaiņas saglabātas.
                         </p>
                     </Transition>
                 </div>

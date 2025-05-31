@@ -125,7 +125,7 @@ export default function UpdatePasswordForm({ className = '' }) {
                         leaveTo="opacity-0"
                     >
                         <p className="text-sm text-gray-600">
-                            Saved.
+                            Izmaiņas saglabātas.
                         </p>
                     </Transition>
                 </div>

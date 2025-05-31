@@ -20,9 +20,7 @@ export default function ForgotPassword({ status }) {
             <Head title="Forgot Password" />
 
             <div className="mb-4 text-sm text-gray-600">
-                Forgot your password? No problem. Just let us know your email
-                address and we will email you a password reset link that will
-                allow you to choose a new one.
+                Ievadiet savu e-pasta adresi, lai varētu nosūtīt saiti, kas dod iespēju nomainīt paroli.
             </div>
 
             {status && (
@@ -46,7 +44,7 @@ export default function ForgotPassword({ status }) {
 
                 <div className="mt-4 flex items-center justify-end">
                     <PrimaryButton className="ms-4" disabled={processing}>
-                        Email Password Reset Link
+                        Sūtīt paroles maiņas saiti
                     </PrimaryButton>
                 </div>
             </form>
