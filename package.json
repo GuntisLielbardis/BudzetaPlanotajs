@@ -19,7 +19,7 @@
     "xlsx": "^0.18.5"
   },
   "scripts": {
-    "build": "react-scripts build",
+    "build": "vite build",
     "dev": "vite",
     "start": "vite",
     "test": "echo \"No tests defined\" && exit 1"
