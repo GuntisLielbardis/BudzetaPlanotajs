@@ -10,7 +10,7 @@ RUN apt-get update && apt-get install -y \
     && docker-php-ext-install pdo pdo_pgsql zip
 
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
-COPY . . # <--- Ensure this happens before composer install for full app copy
+COPY . .
 
 RUN php artisan config:clear \
     && php artisan route:clear \
