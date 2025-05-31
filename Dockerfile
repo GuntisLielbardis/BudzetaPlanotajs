@@ -14,4 +14,3 @@ RUN php artisan config:clear && \
     php artisan view:clear && \
     php artisan optimize
 EXPOSE 80
-CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.php-fpm.conf"]
