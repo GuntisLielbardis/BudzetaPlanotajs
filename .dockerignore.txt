@@ -1,0 +1,10 @@
+# .dockerignore
+.git
+.env
+node_modules
+vendor
+.idea
+.vscode
+storage/*.sqlite # Don't include local SQLite file
+public/hot
+.DS_Store
