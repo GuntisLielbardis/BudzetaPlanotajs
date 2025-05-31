@@ -1,4 +1,4 @@
-FROM richarvey/nginx-php-fpm:php8.2.12_node21.1.0
+FROM richarvey/nginx-php-fpm:latest
 WORKDIR /var/www/html
 COPY composer.json composer.lock ./
 RUN composer install --no-dev --optimize-autoloader --no-scripts
