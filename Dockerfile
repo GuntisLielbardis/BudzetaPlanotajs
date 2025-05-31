@@ -1,4 +1,3 @@
-```dockerfile
 # Dockerfile
 # Use a base image with Nginx and PHP-FPM
 FROM richarvey/nginx-php-fpm:latest # Or a specific version like richarvey/nginx-php-fpm:php8.2-alpine
