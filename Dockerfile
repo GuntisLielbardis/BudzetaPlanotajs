@@ -13,6 +13,5 @@ RUN php artisan config:clear && \
     php artisan route:clear && \
     php artisan view:clear && \
     php artisan optimize
-# (Optional) Run migrations if you're using PostgreSQL later
-# RUN php artisan migrate --force
 EXPOSE 80
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.php-fpm.conf"]
