@@ -436,7 +436,7 @@ export default function Dashboard() {
             }
             headerClassName="dark:bg-gray-800"
         >
-            <Head title="Dashboard" />
+            <Head title="Informācijas panelis" />
 
             <div className="min-h-screen bg-gray-200 dark:bg-gray-800 p-6 rounded-md shadow">
                 <div className="mx-auto max-w-7xl sm:px-6 lg:px-4">

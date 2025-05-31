@@ -1,17 +1,18 @@
 FROM richarvey/nginx-php-fpm:latest
 WORKDIR /var/www/html
-COPY composer.json composer.lock ./
-RUN composer install --no-dev --optimize-autoloader --no-scripts
-COPY package.json package-lock.json ./
-RUN apk update && \
-    apk add --no-cache nodejs npm && \
+COPY . .
+RUN composer install --no-dev --optimize-autoloader
+RUN apk add --no-cache nodejs npm && \
     npm install && \
     npm run build
-COPY . .
-RUN php artisan optimize:clear \
-    && php artisan view:clear \
-    && php artisan route:clear \
-    && php artisan config:clear
+RUN mkdir -p database && \
+    touch database/database.sqlite && \
+    chown -R www-data:www-data storage bootstrap/cache database && \
+    chmod -R 775 storage bootstrap/cache database
+RUN php artisan config:clear && \
+    php artisan route:clear && \
+    php artisan view:clear && \
+    php artisan optimize
+# (Optional) Run migrations if you're using PostgreSQL later
+# RUN php artisan migrate --force
 EXPOSE 80
-RUN chown -R www-data:www-data storage bootstrap/cache \
-    && chmod -R 775 storage bootstrap/cache
