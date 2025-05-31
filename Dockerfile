@@ -1,4 +1,5 @@
-FROM richarvey/nginx-php-fpm:latest # Or a specific version like richarvey/nginx-php-fpm:php8.2-alpine
+FROM richarvey/nginx-php-fpm:latest 
+# Or a specific version like richarvey/nginx-php-fpm:php8.2-alpine
 WORKDIR /var/www/html
 COPY composer.json composer.lock ./
 RUN composer install --no-dev --optimize-autoloader --no-scripts
