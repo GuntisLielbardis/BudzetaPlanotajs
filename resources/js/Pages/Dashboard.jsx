@@ -574,7 +574,8 @@ export default function Dashboard() {
                                                                         className="border rounded px-2 py-1 bg-white dark:bg-gray-700 w-full"
                                                                     />
                                                                 ) : (
-                                                                    source.amount.toFixed(2)
+                                                                    source.amount !== null && source.amount !== undefined
+                                                                    ? parseFloat(source.amount).toFixed(2): '0.00'
                                                                 )}
                                                             </td>
 
@@ -752,7 +753,8 @@ export default function Dashboard() {
                                                                         className="border rounded px-2 py-1 bg-white dark:bg-gray-700 w-full"
                                                                     />
                                                                 ) : (
-                                                                    source.amount.toFixed(2)
+                                                                    source.amount !== null && source.amount !== undefined
+                                                                    ? parseFloat(source.amount).toFixed(2): '0.00'
                                                                 )}
                                                             </td>
 
