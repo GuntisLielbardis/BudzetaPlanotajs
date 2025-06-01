@@ -68,6 +68,22 @@ export default function Dashboard() {
     }, [selectedCurrency]);
 
     useEffect(() => {
+        axios.get('/user/theme')
+            .then((response) => {
+                const prefersDark = response.data.dark_mode;
+                if (prefersDark) {
+                    document.documentElement.classList.add('dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                }
+            })
+            .catch((error) => {
+                console.error('Failed to fetch user theme:', error);
+                setIsThemeLoaded(true);
+            });
+    }, []);
+
+    useEffect(() => {
         fetchIncomeSources();
     }, [monthFilter]);
 

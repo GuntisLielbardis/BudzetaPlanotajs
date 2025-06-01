@@ -22,10 +22,10 @@ createInertiaApp({
             </DarkModeProvider>
         );
 
-        if (import.meta.env.SSR) {
+        /* if (import.meta.env.SSR) {
             hydrateRoot(el, app);
             return;
-        }
+        } */
 
         createRoot(el).render(app);
     },
